@@ -56,12 +56,23 @@ class JM_CSV_Parser
 	/**
 	 * retrieve the next object from the file
 	 * 
-	 * throws an exception if the file has not
-	 * been set
-	 * 
 	 * @return stdClass $obj
 	 */
 	public function getNextObject()
+	{
+		$parsed = $this->getNextArray();
+		$obj    = $this->_toObject($parsed);
+		
+		return $obj;
+	}
+
+	/**
+	 * retrieve the next object from the file
+	 * in an array format
+	 *
+	 * @return array $parsed
+	 */
+	public function getNextArray()
 	{
 		if ($this->_file === NULL)
 		{
@@ -70,24 +81,27 @@ class JM_CSV_Parser
 		
 		$row    = $this->_getRow($this->_header);
 		$parsed = $this->_parseRow($row);
-		$obj    = $this->_toObject($parsed);
 		
-		return $obj;
+		return $parsed;
 	}
-
 	/**
 	 * function to transform the multi-dimentional array
 	 * into a nested stdClass object
 	 * 
 	 * @return stdClass $return
 	 */
-	protected function _toObject($array) {
+	protected function _toObject($array) 
+	{
 		$return = new stdClass();
-		foreach ($array as $k => $v) {
-			if (is_array($v)) {
+	
+		foreach ($array as $k => $v) 
+		{
+			if (is_array($v)) 
+			{
 				$return->$k = $this->_toObject($v);
 			}
-			else {
+			else 
+			{
 				$return->$k = $v;
 			}
 		}
@@ -120,7 +134,7 @@ class JM_CSV_Parser
 	 */
 	protected function _parseCol($key, $value)
 	{
-		$parts = explode('.', $key);
+		$parts      = explode('.', $key);
 		$last_index = count($parts)-1;
 		
 		$return = array($parts[$last_index--]=>$value);
