@@ -19,6 +19,16 @@ class JM_CSV_Parser
 	protected $_header;
 
 	/**
+	 * @var array
+	 */
+	protected $_map = array();
+
+	/**
+	 * @var array
+	 */
+	protected $_whitelist = NULL;
+
+	/**
 	 * Generates a stdClass object from a CSV
 	 * file.  Nested objects can be achieved
 	 * by using a '.' operator in the file
@@ -39,6 +49,25 @@ class JM_CSV_Parser
 		{			
 			$this->setFile($file_name);
 		}
+	}
+
+	/**
+	 * sets a mapping array for altering column headers
+	 *
+	 * @param array $map
+	 */
+	public function setColumnMap(array $map)
+	{
+		$this->_map = $map;
+	}
+
+	/**
+	 * sets a whitelist of columns that will be used
+	 * from the csv file
+	 */
+	public function setWhitelist(array $list)
+	{
+		$this->_whitelist = $list;
 	}
 
 	/**
@@ -84,6 +113,7 @@ class JM_CSV_Parser
 		
 		return $parsed;
 	}
+
 	/**
 	 * function to transform the multi-dimentional array
 	 * into a nested stdClass object
@@ -146,16 +176,48 @@ class JM_CSV_Parser
 		}
 		return $return;
 	}
-	
+
+	/**
+	 * maps headers to those supplied in the map
+	 *
+	 * @param array $headers
+	 * @return array $headers
+	 */
+	protected function _getMappedHeaders(array $headers)
+	{
+		foreach ($headers as $key=>$header)
+		{
+			if (isset($this->_map[$header]))
+			{
+				$headers[$key] = $this->_map[$header];
+			}
+		}
+		return $headers;
+	}
+
 	/**
 	 * retrieve the column headers
 	 * 
-	 * @return array $header
+	 * @return array $headers
 	 */
 	protected function _getHeader($file)
 	{
-		$header = fgetcsv($file);
-		return $header;
+		$headers = fgetcsv($file);
+		$headers = $this->_getMappedHeaders($headers);
+		return $headers;
+	}
+
+	/**
+	 * determine if the column name is in the whitelist
+	 * if the whitelist is set
+	 */
+	protected function _isWhitelisted($column_name)
+	{
+		if ($this->_whitelist === NULL || in_array($column_name, $this->_whitelist))
+		{
+			return TRUE;
+		}
+		return FALSE;
 	}
 
 	/**
@@ -171,7 +233,10 @@ class JM_CSV_Parser
 		$row    = fgetcsv($this->_file);
 		foreach ($row as $key=>$value)
 		{
-			$return[$header[$key]] = $value;
+			if ($this->_isWhitelisted($header[$key]])
+			{
+				$return[$header[$key]] = $value;
+			}
 		}
 		return $return;
 	}
