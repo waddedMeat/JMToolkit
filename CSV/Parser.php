@@ -103,12 +103,13 @@ class JM_CSV_Parser
 	 */
 	public function getNextArray()
 	{
+		$header = $this->_getMappedHeaders($this->_header);
 		if ($this->_file === NULL)
 		{
 			throw new Exception('No file has been provided');
 		}
 		
-		$row    = $this->_getRow($this->_header);
+		$row    = $this->_getRow($header);
 		$parsed = $this->_parseRow($row);
 		
 		return $parsed;
@@ -151,7 +152,10 @@ class JM_CSV_Parser
 		
 		foreach ($row as $key=>$value)
 		{
-			$return = array_merge_recursive($return, $this->_parseCol($key, $value));
+			$return = array_merge_recursive(
+				$return, 
+				$this->_parseCol($key, $value)
+			);
 		}
 		return $return;
 	}
@@ -203,7 +207,6 @@ class JM_CSV_Parser
 	protected function _getHeader($file)
 	{
 		$headers = fgetcsv($file);
-		$headers = $this->_getMappedHeaders($headers);
 		return $headers;
 	}
 
@@ -233,7 +236,7 @@ class JM_CSV_Parser
 		$row    = fgetcsv($this->_file);
 		foreach ($row as $key=>$value)
 		{
-			if ($this->_isWhitelisted($header[$key]])
+			if ($this->_isWhitelisted($header[$key]))
 			{
 				$return[$header[$key]] = $value;
 			}
