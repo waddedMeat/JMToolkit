@@ -307,13 +307,16 @@ class JM_CSV_Parser
 	protected function _getRow($header)
 	{
 		$return = array();
-		$row    = fgetcsv($this->_file);
-		foreach ($row as $key=>$value)
+		
+		if ($row = fgetcsv($this->_file))
 		{
-			if ($this->_isWhitelisted($header[$key]) &&
-				!$this->_isBlacklisted($header[$key]))
+			foreach ($row as $key=>$value)
 			{
-				$return[$header[$key]] = $value;
+				if ($this->_isWhitelisted($header[$key]) &&
+					!$this->_isBlacklisted($header[$key]))
+				{
+					$return[$header[$key]] = $value;
+				}
 			}
 		}
 		return $return;
