@@ -66,6 +66,10 @@ class JM_CSV_Parser
 	 *  
 	 * user->firstname
 	 * user->lastname
+	 *
+	 *
+	 * @author James Moran
+	 * @param  string $file_name
 	 */
 	public function __construct($file_name=NULL)
 	{
@@ -81,7 +85,8 @@ class JM_CSV_Parser
 	 * column name to take advantage of nested objects
 	 * or arrays
 	 *
-	 * @param array $map
+ i	 * @author James Moran
+	 * @param  array $map
 	 * @return JM_CSV_Parser
 	 */
 	public function setColumnMap(array $map)
@@ -94,7 +99,8 @@ class JM_CSV_Parser
 	 * sets a whitelist of columns that will be used
 	 * from the csv file
 	 *
-	 * @param array $list
+ 	 * @author James Moran
+	 * @param  array $list
 	 * @return JM_CSV_Parser
 	 */
 	public function setWhitelist(array $list)
@@ -107,7 +113,8 @@ class JM_CSV_Parser
 	 * sets a blacklist of columns in the csv file
 	 * that will not be used 
 	 *
-	 * @param array $list
+ 	 * @author James Moran
+	 * @param  array $list
 	 * @return JM_CSV_Parser
 	 */
 	public function setBlacklist(array $list)
@@ -120,7 +127,8 @@ class JM_CSV_Parser
 	 * sets the filename to be used by the parser;
 	 * must be a fully qualified path to the file
 	 * 
-	 * @param string $file_name
+ 	 * @author James Moran
+	 * @param  string $file_name
 	 * @return JM_CSV_Parser
 	 */
 	public function setFile($file_name)
@@ -133,6 +141,7 @@ class JM_CSV_Parser
 	/**
 	 * retrieve the next object from the file
 	 * 
+ 	 * @author James Moran
 	 * @return mixed 
 	 */
 	public function getNextObject()
@@ -146,6 +155,7 @@ class JM_CSV_Parser
 	 * retrieve the next object from the file
 	 * in an array format
 	 *
+ 	 * @author James Moran
 	 * @return mixed
 	 */
 	public function getNextArray()
@@ -166,7 +176,8 @@ class JM_CSV_Parser
 	 * function to transform the multi-dimentional 
 	 * array into a nested stdClass object
 	 * 
-	 * @param array $array
+ 	 * @author James Moran
+	 * @param  array $array
 	 * @return stdClass $return
 	 */
 	protected function _toObject($array) 
@@ -192,7 +203,8 @@ class JM_CSV_Parser
 	 * function to parse the row of data
 	 * into a multi-dimentional array
 	 * 
-	 * @param array $row
+ 	 * @author James Moran
+	 * @param  array $row
 	 * @return array $return
 	 */
 	protected function _parseRow($row)
@@ -213,8 +225,9 @@ class JM_CSV_Parser
 	 * parses a single column using a '.' to split
 	 * the column into a multi-dimentional array
 	 * 
-	 * @param string $key
-	 * @param string $value
+ 	 * @author James Moran
+	 * @param  string $key
+	 * @param  string $value
 	 * @return array $return
 	 */
 	protected function _parseCol($key, $value)
@@ -235,7 +248,8 @@ class JM_CSV_Parser
 	/**
 	 * maps headers to those supplied in the map
 	 *
-	 * @param array $headers
+ 	 * @author James Moran
+	 * @param  array $headers
 	 * @return array $headers
 	 */
 	protected function _getMappedHeaders(array $headers)
@@ -253,7 +267,8 @@ class JM_CSV_Parser
 	/**
 	 * retrieve the column headers
 	 * 
-	 * @param file $file
+ 	 * @author James Moran
+	 * @param  file $file
 	 * @return array $headers
 	 */
 	protected function _getHeader($file)
@@ -266,12 +281,14 @@ class JM_CSV_Parser
 	 * determine if the column name is in the whitelist; 
 	 * returns TRUE if the whitelist is not set
 	 *
-	 * @param string $column_name
+ 	 * @author James Moran
+	 * @param  string $column_name
 	 * @return boolean
 	 */
 	protected function _isWhitelisted($column_name)
 	{
-		if ($this->_whitelist === NULL || in_array($column_name, $this->_whitelist))
+		if ($this->_whitelist === NULL || 
+			in_array($column_name, $this->_whitelist))
 		{
 			return TRUE;
 		}
@@ -283,12 +300,14 @@ class JM_CSV_Parser
 	 * the blacklist of columns not to use, if one exists
 	 * returns FALSE if the blacklist is not set
 	 *
-	 * @param string $column_name
+ 	 * @author James Moran
+	 * @param  string $column_name
 	 * @return boolean
 	 */
 	protected function _isBlacklisted($column_name)
 	{
-		if ($this->_blacklist === NULL || !in_array($column_name, $this->_blacklist))
+		if ($this->_blacklist === NULL || 
+			!in_array($column_name, $this->_blacklist))
 		{
 			return FALSE;
 		}
@@ -300,7 +319,8 @@ class JM_CSV_Parser
 	 * returns an array using the column
 	 * headers for the key
 	 * 
-	 * @param array $header
+ 	 * @author James Moran
+	 * @param  array $header
 	 * @return array $return
 	 */
 	protected function _getRow($header)
