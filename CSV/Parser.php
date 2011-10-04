@@ -133,21 +133,20 @@ class JM_CSV_Parser
 	/**
 	 * retrieve the next object from the file
 	 * 
-	 * @return stdClass $obj
+	 * @return mixed 
 	 */
 	public function getNextObject()
 	{
 		$parsed = $this->getNextArray();
-		$obj    = $this->_toObject($parsed);
 		
-		return $obj;
+		return $parsed ? $this->_toObject($parsed) : FALSE;
 	}
 
 	/**
 	 * retrieve the next object from the file
 	 * in an array format
 	 *
-	 * @return array $parsed
+	 * @return mixed
 	 */
 	public function getNextArray()
 	{
@@ -156,11 +155,11 @@ class JM_CSV_Parser
 		{
 			throw new Exception('No file has been provided');
 		}
-		
+			
 		$row    = $this->_getRow($header);
 		$parsed = $this->_parseRow($row);
 		
-		return $parsed;
+		return !empty($parsed) ? $parsed : FALSE;
 	}
 
 	/**
