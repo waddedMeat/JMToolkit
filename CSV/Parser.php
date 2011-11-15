@@ -4,6 +4,25 @@
  * @since      Sep, 28 2011
  * @package    JM_CSV
  * @copyright  Copyright (c) 2011 James Moran
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+ * THE SOFTWARE.
+ *
  */
 
 class JMToolkit_CSV_Parser
@@ -29,6 +48,11 @@ class JMToolkit_CSV_Parser
 	protected $_whitelist = NULL;
 
 	/**
+	 * @var array
+	 */
+	protected $_blacklist = NULL;
+
+	/**
 	 * Generates a stdClass object from a CSV
 	 * file.  Nested objects can be achieved
 	 * by using a '.' operator in the file
@@ -42,6 +66,10 @@ class JMToolkit_CSV_Parser
 	 *  
 	 * user->firstname
 	 * user->lastname
+	 *
+	 *
+	 * @author James Moran
+	 * @param  string $file_name
 	 */
 	public function __construct($file_name=NULL)
 	{
@@ -53,53 +81,82 @@ class JMToolkit_CSV_Parser
 
 	/**
 	 * sets a mapping array for altering column headers
+	 * to another column name, even a '.' seperated
+	 * column name to take advantage of nested objects
+	 * or arrays
 	 *
-	 * @param array $map
+ i	 * @author James Moran
+	 * @param  array $map
+	 * @return JM_CSV_Parser
 	 */
 	public function setColumnMap(array $map)
 	{
 		$this->_map = $map;
+		return $this;
 	}
 
 	/**
 	 * sets a whitelist of columns that will be used
 	 * from the csv file
+	 *
+ 	 * @author James Moran
+	 * @param  array $list
+	 * @return JM_CSV_Parser
 	 */
 	public function setWhitelist(array $list)
 	{
 		$this->_whitelist = $list;
+		return $this;
 	}
 
 	/**
-	 * sets the filename to be used
+	 * sets a blacklist of columns in the csv file
+	 * that will not be used 
+	 *
+ 	 * @author James Moran
+	 * @param  array $list
+	 * @return JM_CSV_Parser
+	 */
+	public function setBlacklist(array $list)
+	{
+		$this->_blacklist = $list;
+		return $this;
+	}
+
+	/**
+	 * sets the filename to be used by the parser;
 	 * must be a fully qualified path to the file
 	 * 
-	 * @param string $file_name
+ 	 * @author James Moran
+	 * @param  string $file_name
+	 * @return JM_CSV_Parser
 	 */
 	public function setFile($file_name)
 	{
-			$this->_file   = fopen($file_name, 'r');
-			$this->_header = $this->_getHeader($this->_file);
+		$this->_file   = fopen($file_name, 'r');
+		$this->_header = $this->_getHeader($this->_file);
+		return $this;
 	}
 
 	/**
 	 * retrieve the next object from the file
 	 * 
-	 * @return stdClass $obj
+ 	 * @author James Moran
+	 * @return mixed 
 	 */
 	public function getNextObject()
 	{
 		$parsed = $this->getNextArray();
-		$obj    = $this->_toObject($parsed);
 		
-		return $obj;
+		return $parsed ? $this->_toObject($parsed) : FALSE;
 	}
 
 	/**
 	 * retrieve the next object from the file
 	 * in an array format
 	 *
-	 * @return array $parsed
+ 	 * @author James Moran
+	 * @return mixed
 	 */
 	public function getNextArray()
 	{
@@ -108,17 +165,19 @@ class JMToolkit_CSV_Parser
 		{
 			throw new Exception('No file has been provided');
 		}
-		
+			
 		$row    = $this->_getRow($header);
 		$parsed = $this->_parseRow($row);
 		
-		return $parsed;
+		return !empty($parsed) ? $parsed : FALSE;
 	}
 
 	/**
-	 * function to transform the multi-dimentional array
-	 * into a nested stdClass object
+	 * function to transform the multi-dimentional 
+	 * array into a nested stdClass object
 	 * 
+ 	 * @author James Moran
+	 * @param  array $array
 	 * @return stdClass $return
 	 */
 	protected function _toObject($array) 
@@ -144,6 +203,8 @@ class JMToolkit_CSV_Parser
 	 * function to parse the row of data
 	 * into a multi-dimentional array
 	 * 
+ 	 * @author James Moran
+	 * @param  array $row
 	 * @return array $return
 	 */
 	protected function _parseRow($row)
@@ -164,6 +225,9 @@ class JMToolkit_CSV_Parser
 	 * parses a single column using a '.' to split
 	 * the column into a multi-dimentional array
 	 * 
+ 	 * @author James Moran
+	 * @param  string $key
+	 * @param  string $value
 	 * @return array $return
 	 */
 	protected function _parseCol($key, $value)
@@ -184,7 +248,8 @@ class JMToolkit_CSV_Parser
 	/**
 	 * maps headers to those supplied in the map
 	 *
-	 * @param array $headers
+ 	 * @author James Moran
+	 * @param  array $headers
 	 * @return array $headers
 	 */
 	protected function _getMappedHeaders(array $headers)
@@ -202,6 +267,8 @@ class JMToolkit_CSV_Parser
 	/**
 	 * retrieve the column headers
 	 * 
+ 	 * @author James Moran
+	 * @param  file $file
 	 * @return array $headers
 	 */
 	protected function _getHeader($file)
@@ -211,12 +278,17 @@ class JMToolkit_CSV_Parser
 	}
 
 	/**
-	 * determine if the column name is in the whitelist
-	 * if the whitelist is set
+	 * determine if the column name is in the whitelist; 
+	 * returns TRUE if the whitelist is not set
+	 *
+ 	 * @author James Moran
+	 * @param  string $column_name
+	 * @return boolean
 	 */
 	protected function _isWhitelisted($column_name)
 	{
-		if ($this->_whitelist === NULL || in_array($column_name, $this->_whitelist))
+		if ($this->_whitelist === NULL || 
+			in_array($column_name, $this->_whitelist))
 		{
 			return TRUE;
 		}
@@ -224,21 +296,46 @@ class JMToolkit_CSV_Parser
 	}
 
 	/**
+	 * method to determine if the column name is on
+	 * the blacklist of columns not to use, if one exists
+	 * returns FALSE if the blacklist is not set
+	 *
+ 	 * @author James Moran
+	 * @param  string $column_name
+	 * @return boolean
+	 */
+	protected function _isBlacklisted($column_name)
+	{
+		if ($this->_blacklist === NULL || 
+			!in_array($column_name, $this->_blacklist))
+		{
+			return FALSE;
+		}
+		return TRUE;
+	}
+
+	/**
 	 * retrieve a row from the file and
 	 * returns an array using the column
 	 * headers for the key
 	 * 
+ 	 * @author James Moran
+	 * @param  array $header
 	 * @return array $return
 	 */
 	protected function _getRow($header)
 	{
 		$return = array();
-		$row    = fgetcsv($this->_file);
-		foreach ($row as $key=>$value)
+		
+		if ($row = fgetcsv($this->_file))
 		{
-			if ($this->_isWhitelisted($header[$key]))
+			foreach ($row as $key=>$value)
 			{
-				$return[$header[$key]] = $value;
+				if ($this->_isWhitelisted($header[$key]) &&
+					!$this->_isBlacklisted($header[$key]))
+				{
+					$return[$header[$key]] = $value;
+				}
 			}
 		}
 		return $return;
