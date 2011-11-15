@@ -6,7 +6,7 @@
  * @copyright  Copyright (c) 2011 James Moran
  */
 
-class JM_CSV_Parser
+class JMToolkit_CSV_Parser
 {
 	/**
 	 * @var file
