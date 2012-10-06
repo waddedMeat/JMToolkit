@@ -45,121 +45,166 @@
 class JMToolkit_CSV_Parser
 {
 	/**
-	 * @var file resource
+	 * _options 
+	 * 
+	 * @var array
+	 * @access protected
+	 */
+	protected $_options = array();
+
+	/**
+	 * _file
+	 * 
+	 * @var mixed
+	 * @access protected
 	 */
 	protected $_file = NULL;
 	
 	/**
+	 * _num_cols 
+	 * 
+	 * @var mixed
+	 * @access protected
+	 */
+	protected $_num_cols;
+
+	/**
+	 * _rows_fetched 
+	 * 
+	 * @var mixed
+	 * @access protected
+	 */
+	protected $_rows_fetched;
+
+	/**
+	 * _setter 
+	 * 
 	 * @var array
+	 * @access protected
 	 */
-	protected $_header = array();
+	protected $_setter = array();
 
 	/**
+	 * _array 
+	 * 
 	 * @var array
+	 * @access protected
 	 */
-	protected $_map = array();
+	protected $_array = array();
 
 	/**
-	 * @var array
-	 */
-	protected $_whitelist = NULL;
-
-	/**
-	 * @var array
-	 */
-	protected $_blacklist = NULL;
-
-	/**
-	 * @var boolean
-	 */
-	protected $_test_file = FALSE;
-
-	protected $_num_cols = 0;
-	protected $_rows_fetched = 0;
-
-	/**
+	 * __construct
+	 *
 	 * @author James Moran
-	 * @param  string $file_name
+	 * @param mixed $file_name
+	 * @param array $options
+	 * @access public
+	 * @return void
 	 */
-	public function __construct($file_name=NULL)
+	public function __construct($file_name=NULL, $options=array())
 	{
 		if (!is_null($file_name))
 		{			
 			$this->setFile($file_name);
 		}
+		$this->_options = array_merge(
+			array(
+				'whitelist'=>null,
+				'blacklist'=>null,
+				'column_map'=>null,
+			), $options
+		);
+		$this->_num_cols     = 0;
+		$this->_rows_fetched = 0;
 	}
 
 	/**
-	 * sets a mapping array for altering column headers
-	 * to another column name, even a '.' seperated
-	 * column name to take advantage of nested objects
-	 * or arrays
+	 * setColumnMap
+	 *
+	 * sets a mapping array for altering column headers to another column name, 
+	 * even a '.' seperated column name to take advantage of nested objects or 
+	 * arrays
 	 *
  	 * @author James Moran
-	 * @param  array $map
-	 * @return JM_CSV_Parser
+	 * @param array $map
+	 * @access public
+	 * @return JMToolkit_CSV_Parser
 	 */
-	public function setColumnMap(array $map)
-	{
-		$this->_map = $map;
+	public function setColumnMap(array $map) {
+		if ($this->_rows_fetched > 0) {
+			throw new JMToolkit_Exception("Attempting to set map after parsing has start");
+		}
+		$this->_options['column_map'] = $map;
 		return $this;
 	}
 
 	/**
-	 * sets a whitelist of columns that will be used
-	 * from the csv file
+	 * setWhitelist
 	 *
- 	 * @author James Moran
-	 * @param  array $list
-	 * @return JM_CSV_Parser
+	 * sets a whitelist of columns that will be used from the csv file
+	 *
+	 * @author James Moran
+	 * @param array $list
+	 * @access public
+	 * @return JMToolkit_CSV_Parser
 	 */
 	public function setWhitelist(array $list)
 	{
-		$this->_whitelist = $list;
+		if ($this->_rows_fetched > 0) {
+			throw new JMToolkit_Exception("Attempting to set list after parsing has start");
+		}
+		$this->_options['whitelist'] = $list;
 		return $this;
 	}
 
 	/**
-	 * sets a blacklist of columns in the csv file
-	 * that will not be used 
+	 * setBlacklist
 	 *
- 	 * @author James Moran
-	 * @param  array $list
-	 * @return JM_CSV_Parser
+	 * sets a blacklist of columns in the csv file that will not be used 
+	 *
+	 * @author James Moran
+	 * @param array $list
+	 * @access public
+	 * @return JMToolkit_CSV_Parser
 	 */
 	public function setBlacklist(array $list)
 	{
-		$this->_blacklist = $list;
+		if ($this->_rows_fetched > 0) {
+			throw new JMToolkit_Exception("Attempting to set list after parsing has start");
+		}
+		$this->_options['blacklist'] = $list;
 		return $this;
 	}
 
 	/**
-	 * sets the path to the CSV file
+	 * setFile
 	 *
- 	 * @author James Moran
-	 * @param  string|mixed $file_name
-	 * @return JM_CSV_Parser
-	 * @throws JMToolkit_Exception
+	 * sets the file resource using the path
+	 *
+	 * @author James Moran
+	 * @param mixed $path
+	 * @access public
+	 * @return JMToolkit_CSV_Parser
 	 */
 	public function setFile($path)
 	{
 		if (!is_string($path)) {
 			throw new JMToolkit_Exception("Path must be a string.");
 		}
-		if ($this->_test_file && !file_exists($file_name)) {
-			throw new JMToolkit_Exception('File does not exist.');
-		}
 
-		$this->_file   = fopen($path, 'r');
-		$this->_header = $this->_getHeader($this->_file);
+		$this->_file = $this->__fopen($path, 'r');
+		$this->_rows_fetched = 0;
 		return $this;
 	}
 
 	/**
+	 * getNextObject
+	 *
 	 * retrieve the next row as and object
-	 * 
- 	 * @author James Moran
-	 * @return stdClass|boolean 
+	 *
+	 * @author James Moran
+	 * @access public
+	 * @return boolean
 	 */
 	public function getNextObject()
 	{
@@ -169,171 +214,214 @@ class JMToolkit_CSV_Parser
 	}
 
 	/**
+	 * getNextArray
+	 *
 	 * retrieve the row in an array format
 	 *
- 	 * @author James Moran
-	 * @return array|boolean
-	 * @throws JMToolkit_Exception
+	 * @author James Moran
+	 * @access public
+	 * @return array
 	 */
 	public function getNextArray()
 	{
-		$header = $this->_getMappedHeaders($this->_header);
-		if ($this->_file === NULL)
-		{
-			throw new JMToolkit_Exception('No file has been provided');
-		}
-			
-		$row    = $this->_getRow($header);
-		$parsed = $this->_parseRow($row);
+		$this->_clean();
 
-		$return = FALSE;
-		if (!empty($parsed)) {
-			$return = $parsed;
+		if ($this->_rows_fetched == 0) {
+			$this->_initArray($this->_getHeader());
+		}	
+
+		$return = $this->_getRow();
+
+		if (!empty($return)) {
 			$this->_rows_fetched++;
 		}	
+
 		return $return;
 	}
 
 	/**
-	 * function to parse the row of data
-	 * into a multi-dimentional array
-	 * 
- 	 * @author James Moran
-	 * @param  array $record
-	 * @return array $return
+	 * __fopen
+	 *
+	 * @author James Moran
+	 * @param mixed $path
+	 * @param mixed $options
+	 * @access protected
+	 * @return file
 	 */
-	protected function _parseRow($record)
-	{
-		$return = array();
-		
-		foreach ($record as $key=>$value)
-		{
-			$return = array_merge_recursive(
-				$return, 
-				$this->_parseCol($key, $value)
-			);
+	protected function __fopen($path, $options) {
+		if (!file_exists($path)) {
+			throw new JMToolkit_Exception('File does not exist.');
 		}
-		return $return;
-	}
-	
-	/**
-	 * parses a single column using a '.' to split
-	 * the column into a multi-dimentional array
-	 * 
- 	 * @author James Moran
-	 * @param  string $key
-	 * @param  string $value
-	 * @return array $return
-	 */
-	protected function _parseCol($key, $value)
-	{
-		$parts      = explode('.', $key);
-		$last_index = count($parts)-1;
-		
-		$return = array($parts[$last_index--]=>$value);
-		
-		for ($last_index; $last_index>=0; $last_index--)
-		{
-			$return[$parts[$last_index]] = $return;
-			unset($return[$parts[$last_index+1]]);
-		}
-		return $return;
+		return fopen($path, $options);
 	}
 
 	/**
+	 * _clean 
+	 * 
+	 * @author James Moran
+	 * @access protected
+	 * @return void
+	 */
+	protected function _clean() {
+		foreach ($this->_setter as &$field) {
+			$field = null;
+		}
+	}
+
+	/**
+	 * _getRow 
+	 * 
+	 * @author James Moran
+	 * @access protected
+	 * @return array
+	 */
+	protected function _getRow() {
+		foreach ($this->_readFileRow() as $i=>$value) {
+			$this->_setter[$i] = $value;
+		}
+		return $this->_array;
+	}
+
+	/**
+	 * _getMappedHeaders
+	 *
 	 * maps headers to those supplied in the map
 	 *
- 	 * @author James Moran
-	 * @param  array $headers
-	 * @return array $headers
+	 * @author James Moran
+	 * @param array $headers
+	 * @access protected
+	 * @return array
 	 */
-	protected function _getMappedHeaders(array $headers)
-	{
-		foreach ($headers as $key=>$header)
-		{
-			if (isset($this->_map[$header]))
-			{
-				$headers[$key] = $this->_map[$header];
+	protected function _getMappedHeaders(array $headers) {
+		if (is_array($this->_options['column_map'])) {
+			foreach ($headers as $i=>$header) {
+				if (isset($this->_options['column_map'])) {
+					$headers[$i] = $this->_options['column_map'][$header];
+				}
 			}
 		}
 		return $headers;
 	}
 
 	/**
+	 * _getHeader
+	 *
 	 * retrieve the column headers
 	 * 
- 	 * @author James Moran
-	 * @param  file $file
-	 * @return array $headers
+	 * @author James Moran
+	 * @access protected
+	 * @return array
 	 */
-	protected function _getHeader($file)
-	{
-		$headers = fgetcsv($file);
-		$this->_num_cols = count($headers);
+	protected function _getHeader() {
+		$headers = $this->_readFileRow();
+		if (empty($headers)) {
+			throw new JMToolkit_Exception('File is missing header row');
+		}
+		$headers = $this->_getMappedHeaders($headers);
 		return $headers;
 	}
 
 	/**
-	 * determine if the column name is in the whitelist; 
-	 * returns TRUE if the whitelist is not set
-	 *
- 	 * @author James Moran
-	 * @param  string $column_name
-	 * @return boolean
+	 * _removeArray 
+	 * 
+	 * @author James Moran
+	 * @access protected
+	 * @return void
 	 */
-	protected function _isWhitelisted($column_name)
-	{
-		if ($this->_whitelist === NULL || 
-			in_array($column_name, $this->_whitelist))
-		{
-			return TRUE;
-		}
-		return FALSE;
+	protected function _removeArray() {
+		unset($this->_array);
+		unset($this->_setter);
+		$this->_array  = array();
+		$this->_setter = array();
 	}
 
 	/**
+	 * _initArray 
+	 * 
+	 * @author James Moran
+	 * @param mixed $keys 
+	 * @access protected
+	 * @return void
+	 */
+	protected function _initArray($keys) {
+		$this->_removeArray();	
+		foreach ($keys as $column => $key) {
+			if ($this->_isWhitelisted($key) && !$this->_isBlacklisted($key)) {
+
+				$pointer =& $this->_array;
+
+				$names      = explode('.', $key);
+				$last_index = count($names)-1;
+
+				foreach ($names as $i=>$name) {
+					if ($i != $last_index) {
+						$pointer = &$pointer[$name];
+						continue;
+					}
+					$this->_setter[$column] =& $pointer[$name];
+				}
+			}
+		}	
+	}
+
+	/**
+	 * _readFileRow
+	 *
+	 * read a file from the current file marker 
+	 * 
+	 * @author James Moran
+	 * @access protected
+	 * @return array
+	 */
+	protected function _readFileRow() {
+
+		if (is_null($this->_file)) {
+			throw new JMToolkit_Exception('No file has been provided');
+		}
+
+		$return = fgetcsv($this->_file);
+
+		$size = count($return);
+
+		if ($size != $this->_num_cols) {
+			throw new JMToolkit_Exception(sprintf('Invalid file: Error on row %s',$this->_rows_fetched+1));
+		}
+		else {
+			$this->_num_cols = $size;
+		}
+		return $return;
+	}
+
+	/**
+	 * _isWhitelisted
+	 *
+	 * determine if the column name is in the whitelist; 
+	 * returns TRUE if the whitelist is not set
+	 *
+	 * @author James Moran
+	 * @param mixed $column_name
+	 * @access protected
+	 * @return boolean
+	 */
+	protected function _isWhitelisted($name)
+	{
+		return (is_null($this->_options['whitelist']) || in_array($name, $this->_options['whitelist'])); 
+	}
+
+	/**
+	 * _isBlacklisted
+	 *
 	 * method to determine if the column name is on
 	 * the blacklist of columns not to use, if one exists
 	 * returns FALSE if the blacklist is not set
 	 *
- 	 * @author James Moran
-	 * @param  string $column_name
+	 * @author James Moran
+	 * @param mixed $column_name
+	 * @access protected
 	 * @return boolean
 	 */
-	protected function _isBlacklisted($column_name)
+	protected function _isBlacklisted($name)
 	{
-		if ($this->_blacklist === NULL || 
-			!in_array($column_name, $this->_blacklist))
-		{
-			return FALSE;
-		}
-		return TRUE;
-	}
-
-	/**
-	 * retrieve a row from the file and
-	 * returns an array using the column
-	 * headers for the key
-	 * 
- 	 * @author James Moran
-	 * @param  array $header
-	 * @return array $return
-	 */
-	protected function _getRow($header)
-	{
-		$return = array();
-		
-		if ($row = fgetcsv($this->_file))
-		{
-			foreach ($row as $key=>$value)
-			{
-				if ($this->_isWhitelisted($header[$key]) &&
-					!$this->_isBlacklisted($header[$key]))
-				{
-					$return[$header[$key]] = $value;
-				}
-			}
-		}
-		return $return;
+		return (!is_null($this->_options['blacklist']) && in_array($name, $this->_options['blacklist']));
 	}
 }
