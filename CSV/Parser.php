@@ -74,6 +74,9 @@ class JMToolkit_CSV_Parser
 	 */
 	protected $_test_file = FALSE;
 
+	protected $_num_cols = 0;
+	protected $_rows_fetched = 0;
+
 	/**
 	 * @author James Moran
 	 * @param  string $file_name
@@ -182,8 +185,13 @@ class JMToolkit_CSV_Parser
 			
 		$row    = $this->_getRow($header);
 		$parsed = $this->_parseRow($row);
-		
-		return !empty($parsed) ? $parsed : FALSE;
+
+		$return = FALSE;
+		if (!empty($parsed)) {
+			$return = $parsed;
+			$this->_rows_fetched++;
+		}	
+		return $return;
 	}
 
 	/**
@@ -261,6 +269,7 @@ class JMToolkit_CSV_Parser
 	protected function _getHeader($file)
 	{
 		$headers = fgetcsv($file);
+		$this->_num_cols = count($headers);
 		return $headers;
 	}
 
