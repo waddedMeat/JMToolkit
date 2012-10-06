@@ -1,10 +1,5 @@
 <?php
 /**
- * @author     James Moran
- * @since      Sep, 28 2011
- * @package    JM_CSV
- * @copyright  Copyright (c) 2011 James Moran
- *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
  * in the Software without restriction, including without limitation the rights
@@ -23,19 +18,41 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  *
+ * @author     James Moran
+ * @since      Sep, 28 2011
+ * @package    JM_CSV
+ * @copyright  Copyright (c) 2011 James Moran
+ *
+ * < Description >
+ *
+ * Parses a CSV file into a complex object structure using the first row of the
+ * file to define keys using a dot (.) seporated name spacing
+ * 
+ * EXAMPLE
+ * 
+ * user.firstname, user.lastname, user.email.work, user.email.home
+ * John, Doe, work@email.com, home@email.com
+ * 
+ * 
+ *  
+ * user->firstname   == "John"
+ * user->lastname    == "Doe"
+ * user->email->work == "work@email.com"
+ * user->email->home == "home@email.com"
+ *
  */
 
 class JMToolkit_CSV_Parser
 {
 	/**
-	 * @var file
+	 * @var file resource
 	 */
 	protected $_file = NULL;
 	
 	/**
 	 * @var array
 	 */
-	protected $_header;
+	protected $_header = array();
 
 	/**
 	 * @var array
@@ -53,21 +70,11 @@ class JMToolkit_CSV_Parser
 	protected $_blacklist = NULL;
 
 	/**
-	 * Generates a stdClass object from a CSV
-	 * file.  Nested objects can be achieved
-	 * by using a '.' operator in the file
-	 * header
-	 * 
-	 * EXAMPLE
-	 * 
-	 * user.firstname,user.lastname
-	 * 
-	 * will result in:
-	 *  
-	 * user->firstname
-	 * user->lastname
-	 *
-	 *
+	 * @var boolean
+	 */
+	protected $_test_file = FALSE;
+
+	/**
 	 * @author James Moran
 	 * @param  string $file_name
 	 */
@@ -85,7 +92,7 @@ class JMToolkit_CSV_Parser
 	 * column name to take advantage of nested objects
 	 * or arrays
 	 *
- i	 * @author James Moran
+ 	 * @author James Moran
 	 * @param  array $map
 	 * @return JM_CSV_Parser
 	 */
@@ -124,46 +131,53 @@ class JMToolkit_CSV_Parser
 	}
 
 	/**
-	 * sets the filename to be used by the parser;
-	 * must be a fully qualified path to the file
-	 * 
+	 * sets the path to the CSV file
+	 *
  	 * @author James Moran
-	 * @param  string $file_name
+	 * @param  string|mixed $file_name
 	 * @return JM_CSV_Parser
+	 * @throws JMToolkit_Exception
 	 */
-	public function setFile($file_name)
+	public function setFile($path)
 	{
-		$this->_file   = fopen($file_name, 'r');
+		if (!is_string($path)) {
+			throw new JMToolkit_Exception("Path must be a string.");
+		}
+		if ($this->_test_file && !file_exists($file_name)) {
+			throw new JMToolkit_Exception('File does not exist.');
+		}
+
+		$this->_file   = fopen($path, 'r');
 		$this->_header = $this->_getHeader($this->_file);
 		return $this;
 	}
 
 	/**
-	 * retrieve the next object from the file
+	 * retrieve the next row as and object
 	 * 
  	 * @author James Moran
-	 * @return mixed 
+	 * @return stdClass|boolean 
 	 */
 	public function getNextObject()
 	{
-		$parsed = $this->getNextArray();
+		$array = $this->getNextArray();
 		
-		return $parsed ? $this->_toObject($parsed) : FALSE;
+		return $array ? json_decode(json_encode($array)) : FALSE;
 	}
 
 	/**
-	 * retrieve the next object from the file
-	 * in an array format
+	 * retrieve the row in an array format
 	 *
  	 * @author James Moran
-	 * @return mixed
+	 * @return array|boolean
+	 * @throws JMToolkit_Exception
 	 */
 	public function getNextArray()
 	{
 		$header = $this->_getMappedHeaders($this->_header);
 		if ($this->_file === NULL)
 		{
-			throw new Exception('No file has been provided');
+			throw new JMToolkit_Exception('No file has been provided');
 		}
 			
 		$row    = $this->_getRow($header);
@@ -173,45 +187,18 @@ class JMToolkit_CSV_Parser
 	}
 
 	/**
-	 * function to transform the multi-dimentional 
-	 * array into a nested stdClass object
-	 * 
- 	 * @author James Moran
-	 * @param  array $array
-	 * @return stdClass $return
-	 */
-	protected function _toObject($array) 
-	{
-		$return = new stdClass();
-	
-		foreach ($array as $k => $v) 
-		{
-			if (is_array($v)) 
-			{
-				$return->$k = $this->_toObject($v);
-			}
-			else 
-			{
-				$return->$k = $v;
-			}
-		}
-	 
-		return $return;
-	}
-	
-	/**
 	 * function to parse the row of data
 	 * into a multi-dimentional array
 	 * 
  	 * @author James Moran
-	 * @param  array $row
+	 * @param  array $record
 	 * @return array $return
 	 */
-	protected function _parseRow($row)
+	protected function _parseRow($record)
 	{
 		$return = array();
 		
-		foreach ($row as $key=>$value)
+		foreach ($record as $key=>$value)
 		{
 			$return = array_merge_recursive(
 				$return, 
