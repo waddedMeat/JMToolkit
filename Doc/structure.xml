@@ -1,0 +1,443 @@
+<?xml version="1.0" encoding="utf-8"?>
+<project version="2.0.0a10" title="">
+  <file path="Parser.php" hash="06eac424ac4693335a371573e6a99f4f" package="Default">
+    <docblock line="2">
+      <description><![CDATA[Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:]]></description>
+      <long-description><![CDATA[<p>The above copyright notice and this permission notice shall be included in
+all copies or substantial portions of the Software.</p>
+
+<p>THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+THE SOFTWARE.</p>]]></long-description>
+    </docblock>
+    <class final="false" abstract="false" namespace="global" line="48" package="JMToolkit\CSV">
+      <extends/>
+      <name>JMToolkit_CSV_Parser</name>
+      <full_name>\JMToolkit_CSV_Parser</full_name>
+      <docblock line="24">
+        <description><![CDATA[JMToolkit_CSV_Parser]]></description>
+        <long-description><![CDATA[]]></long-description>
+        <tag line="24" name="package" description="JMToolkit_CSV"/>
+        <tag line="24" name="author" description="James Moran &lt;moranjk75@gmail.com&gt;"/>
+        <tag line="24" name="copyright" description="2011 James Moran"/>
+        <tag line="24" name="since" description="Sep, 28 2011"/>
+        <tag line="24" name="description" description="Parses a CSV file into a complex object structure using the first row of the&#10;file to define keys using a dot (.) seporated name spacing"/>
+        <tag line="24" name="example" description="&lt;pre&gt;&#10;user.firstname, user.lastname, user.email.work, user.email.home&#10;John, Doe, work@email.com, home@email.com&#10;&lt;br/&gt;&#10;$array['user']['firstname']     == &quot;John&quot;&#10;$array['user']['lastname']      == &quot;Doe&quot;&#10;$array['user']['email']['work'] == &quot;work@email.com&quot;&#10;$array['user']['email']['home'] == &quot;home@email.com&quot;&#10;&lt;/pre&gt;"/>
+      </docblock>
+      <property final="false" static="false" visibility="protected" line="56" namespace="global" package="Default">
+        <name>$_options</name>
+        <default><![CDATA[array()]]></default>
+        <docblock line="50">
+          <description><![CDATA[_options]]></description>
+          <long-description><![CDATA[]]></long-description>
+          <tag line="50" name="var" description="" type="array">
+            <type by_reference="false">array</type>
+          </tag>
+          <tag line="50" name="access" description="protected"/>
+        </docblock>
+      </property>
+      <property final="false" static="false" visibility="protected" line="64" namespace="global" package="Default">
+        <name>$_file</name>
+        <default><![CDATA[null]]></default>
+        <docblock line="58">
+          <description><![CDATA[_file]]></description>
+          <long-description><![CDATA[]]></long-description>
+          <tag line="58" name="var" description="" type="mixed">
+            <type by_reference="false">mixed</type>
+          </tag>
+          <tag line="58" name="access" description="protected"/>
+        </docblock>
+      </property>
+      <property final="false" static="false" visibility="protected" line="72" namespace="global" package="Default">
+        <name>$_num_cols</name>
+        <default><![CDATA[]]></default>
+        <docblock line="66">
+          <description><![CDATA[_num_cols]]></description>
+          <long-description><![CDATA[]]></long-description>
+          <tag line="66" name="var" description="" type="mixed">
+            <type by_reference="false">mixed</type>
+          </tag>
+          <tag line="66" name="access" description="protected"/>
+        </docblock>
+      </property>
+      <property final="false" static="false" visibility="protected" line="80" namespace="global" package="Default">
+        <name>$_rows_fetched</name>
+        <default><![CDATA[]]></default>
+        <docblock line="74">
+          <description><![CDATA[_rows_fetched]]></description>
+          <long-description><![CDATA[]]></long-description>
+          <tag line="74" name="var" description="" type="mixed">
+            <type by_reference="false">mixed</type>
+          </tag>
+          <tag line="74" name="access" description="protected"/>
+        </docblock>
+      </property>
+      <property final="false" static="false" visibility="protected" line="88" namespace="global" package="Default">
+        <name>$_setter</name>
+        <default><![CDATA[array()]]></default>
+        <docblock line="82">
+          <description><![CDATA[_setter]]></description>
+          <long-description><![CDATA[]]></long-description>
+          <tag line="82" name="var" description="" type="array">
+            <type by_reference="false">array</type>
+          </tag>
+          <tag line="82" name="access" description="protected"/>
+        </docblock>
+      </property>
+      <property final="false" static="false" visibility="protected" line="96" namespace="global" package="Default">
+        <name>$_array</name>
+        <default><![CDATA[array()]]></default>
+        <docblock line="90">
+          <description><![CDATA[_array]]></description>
+          <long-description><![CDATA[]]></long-description>
+          <tag line="90" name="var" description="" type="array">
+            <type by_reference="false">array</type>
+          </tag>
+          <tag line="90" name="access" description="protected"/>
+        </docblock>
+      </property>
+      <method final="false" abstract="false" static="false" visibility="public" namespace="global" line="107" package="JMToolkit\CSV">
+        <name>__construct</name>
+        <full_name>__construct</full_name>
+        <docblock line="98">
+          <description><![CDATA[__construct]]></description>
+          <long-description><![CDATA[]]></long-description>
+          <tag line="98" name="author" description="James Moran"/>
+          <tag line="98" name="param" description="" type="string|null" variable="$file_name">
+            <type by_reference="false">string</type>
+            <type by_reference="false">null</type>
+          </tag>
+          <tag line="98" name="param" description="" type="array" variable="$options">
+            <type by_reference="false">array</type>
+          </tag>
+          <tag line="98" name="access" description="public"/>
+          <tag line="98" name="return" description="" type="void">
+            <type by_reference="false">void</type>
+          </tag>
+        </docblock>
+        <argument line="107">
+          <name>$file_name</name>
+          <default><![CDATA[NULL]]></default>
+          <type/>
+        </argument>
+        <argument line="107">
+          <name>$options</name>
+          <default><![CDATA[array()]]></default>
+          <type/>
+        </argument>
+      </method>
+      <method final="false" abstract="false" static="false" visibility="public" namespace="global" line="135" package="JMToolkit\CSV">
+        <name>setColumnMap</name>
+        <full_name>setColumnMap</full_name>
+        <docblock line="123">
+          <description><![CDATA[setColumnMap]]></description>
+          <long-description><![CDATA[<p>sets a mapping array for altering column headers to another column name,
+even a '.' seperated column name to take advantage of nested objects or
+arrays</p>]]></long-description>
+          <tag line="123" name="author" description="James Moran"/>
+          <tag line="123" name="param" description="" type="array" variable="$map">
+            <type by_reference="false">array</type>
+          </tag>
+          <tag line="123" name="access" description="public"/>
+          <tag line="123" name="return" description="" type="\JMToolkit_CSV_Parser">
+            <type by_reference="false">\JMToolkit_CSV_Parser</type>
+          </tag>
+        </docblock>
+        <argument line="135">
+          <name>$map</name>
+          <default><![CDATA[]]></default>
+          <type>array</type>
+        </argument>
+      </method>
+      <method final="false" abstract="false" static="false" visibility="public" namespace="global" line="154" package="JMToolkit\CSV">
+        <name>setWhitelist</name>
+        <full_name>setWhitelist</full_name>
+        <docblock line="144">
+          <description><![CDATA[setWhitelist]]></description>
+          <long-description><![CDATA[<p>sets a whitelist of columns that will be used from the csv file</p>]]></long-description>
+          <tag line="144" name="author" description="James Moran"/>
+          <tag line="144" name="param" description="" type="array" variable="$list">
+            <type by_reference="false">array</type>
+          </tag>
+          <tag line="144" name="access" description="public"/>
+          <tag line="144" name="return" description="" type="\JMToolkit_CSV_Parser">
+            <type by_reference="false">\JMToolkit_CSV_Parser</type>
+          </tag>
+        </docblock>
+        <argument line="154">
+          <name>$list</name>
+          <default><![CDATA[]]></default>
+          <type>array</type>
+        </argument>
+      </method>
+      <method final="false" abstract="false" static="false" visibility="public" namespace="global" line="173" package="JMToolkit\CSV">
+        <name>setBlacklist</name>
+        <full_name>setBlacklist</full_name>
+        <docblock line="163">
+          <description><![CDATA[setBlacklist]]></description>
+          <long-description><![CDATA[<p>sets a blacklist of columns in the csv file that will not be used</p>]]></long-description>
+          <tag line="163" name="author" description="James Moran"/>
+          <tag line="163" name="param" description="" type="array" variable="$list">
+            <type by_reference="false">array</type>
+          </tag>
+          <tag line="163" name="access" description="public"/>
+          <tag line="163" name="return" description="" type="\JMToolkit_CSV_Parser">
+            <type by_reference="false">\JMToolkit_CSV_Parser</type>
+          </tag>
+        </docblock>
+        <argument line="173">
+          <name>$list</name>
+          <default><![CDATA[]]></default>
+          <type>array</type>
+        </argument>
+      </method>
+      <method final="false" abstract="false" static="false" visibility="public" namespace="global" line="192" package="JMToolkit\CSV">
+        <name>setFile</name>
+        <full_name>setFile</full_name>
+        <docblock line="182">
+          <description><![CDATA[setFile]]></description>
+          <long-description><![CDATA[<p>sets the file resource using the path</p>]]></long-description>
+          <tag line="182" name="author" description="James Moran"/>
+          <tag line="182" name="param" description="" type="string" variable="$path">
+            <type by_reference="false">string</type>
+          </tag>
+          <tag line="182" name="access" description="public"/>
+          <tag line="182" name="return" description="" type="\JMToolkit_CSV_Parser">
+            <type by_reference="false">\JMToolkit_CSV_Parser</type>
+          </tag>
+        </docblock>
+        <argument line="192">
+          <name>$path</name>
+          <default><![CDATA[]]></default>
+          <type/>
+        </argument>
+      </method>
+      <method final="false" abstract="false" static="false" visibility="public" namespace="global" line="212" package="JMToolkit\CSV">
+        <name>getNextObject</name>
+        <full_name>getNextObject</full_name>
+        <docblock line="203">
+          <description><![CDATA[getNextObject]]></description>
+          <long-description><![CDATA[<p>retrieve the next row as and object</p>]]></long-description>
+          <tag line="203" name="author" description="James Moran"/>
+          <tag line="203" name="access" description="public"/>
+          <tag line="203" name="return" description="" type="array|boolean">
+            <type by_reference="false">array</type>
+            <type by_reference="false">boolean</type>
+          </tag>
+        </docblock>
+      </method>
+      <method final="false" abstract="false" static="false" visibility="public" namespace="global" line="228" package="JMToolkit\CSV">
+        <name>getNextArray</name>
+        <full_name>getNextArray</full_name>
+        <docblock line="219">
+          <description><![CDATA[getNextArray]]></description>
+          <long-description><![CDATA[<p>retrieve the row in an array format</p>]]></long-description>
+          <tag line="219" name="author" description="James Moran"/>
+          <tag line="219" name="access" description="public"/>
+          <tag line="219" name="return" description="" type="array|boolean">
+            <type by_reference="false">array</type>
+            <type by_reference="false">boolean</type>
+          </tag>
+        </docblock>
+      </method>
+      <method final="false" abstract="false" static="false" visibility="protected" namespace="global" line="254" package="JMToolkit\CSV">
+        <name>_openFile</name>
+        <full_name>_openFile</full_name>
+        <docblock line="245">
+          <description><![CDATA[_openFile]]></description>
+          <long-description><![CDATA[]]></long-description>
+          <tag line="245" name="author" description="James Moran"/>
+          <tag line="245" name="param" description="" type="mixed" variable="$path">
+            <type by_reference="false">mixed</type>
+          </tag>
+          <tag line="245" name="param" description="" type="mixed" variable="$options">
+            <type by_reference="false">mixed</type>
+          </tag>
+          <tag line="245" name="access" description="protected"/>
+          <tag line="245" name="return" description="" type="\file">
+            <type by_reference="false">\file</type>
+          </tag>
+        </docblock>
+        <argument line="254">
+          <name>$path</name>
+          <default><![CDATA[]]></default>
+          <type/>
+        </argument>
+        <argument line="254">
+          <name>$options</name>
+          <default><![CDATA[]]></default>
+          <type/>
+        </argument>
+      </method>
+      <method final="false" abstract="false" static="false" visibility="protected" namespace="global" line="269" package="JMToolkit\CSV">
+        <name>_clean</name>
+        <full_name>_clean</full_name>
+        <docblock line="262">
+          <description><![CDATA[_clean]]></description>
+          <long-description><![CDATA[]]></long-description>
+          <tag line="262" name="author" description="James Moran"/>
+          <tag line="262" name="access" description="protected"/>
+          <tag line="262" name="return" description="" type="void">
+            <type by_reference="false">void</type>
+          </tag>
+        </docblock>
+      </method>
+      <method final="false" abstract="false" static="false" visibility="protected" namespace="global" line="283" package="JMToolkit\CSV">
+        <name>_getRow</name>
+        <full_name>_getRow</full_name>
+        <docblock line="276">
+          <description><![CDATA[_getRow]]></description>
+          <long-description><![CDATA[]]></long-description>
+          <tag line="276" name="author" description="James Moran"/>
+          <tag line="276" name="access" description="protected"/>
+          <tag line="276" name="return" description="" type="array">
+            <type by_reference="false">array</type>
+          </tag>
+        </docblock>
+      </method>
+      <method final="false" abstract="false" static="false" visibility="protected" namespace="global" line="301" package="JMToolkit\CSV">
+        <name>_getMappedHeaders</name>
+        <full_name>_getMappedHeaders</full_name>
+        <docblock line="291">
+          <description><![CDATA[_getMappedHeaders]]></description>
+          <long-description><![CDATA[<p>maps headers to those supplied in the map</p>]]></long-description>
+          <tag line="291" name="author" description="James Moran"/>
+          <tag line="291" name="param" description="" type="array" variable="$headers">
+            <type by_reference="false">array</type>
+          </tag>
+          <tag line="291" name="access" description="protected"/>
+          <tag line="291" name="return" description="" type="array">
+            <type by_reference="false">array</type>
+          </tag>
+        </docblock>
+        <argument line="301">
+          <name>$headers</name>
+          <default><![CDATA[]]></default>
+          <type>array</type>
+        </argument>
+      </method>
+      <method final="false" abstract="false" static="false" visibility="protected" namespace="global" line="322" package="JMToolkit\CSV">
+        <name>_getHeader</name>
+        <full_name>_getHeader</full_name>
+        <docblock line="313">
+          <description><![CDATA[_getHeader]]></description>
+          <long-description><![CDATA[<p>retrieve the column headers</p>]]></long-description>
+          <tag line="313" name="author" description="James Moran"/>
+          <tag line="313" name="access" description="protected"/>
+          <tag line="313" name="return" description="" type="array">
+            <type by_reference="false">array</type>
+          </tag>
+        </docblock>
+      </method>
+      <method final="false" abstract="false" static="false" visibility="protected" namespace="global" line="339" package="JMToolkit\CSV">
+        <name>_removeArray</name>
+        <full_name>_removeArray</full_name>
+        <docblock line="332">
+          <description><![CDATA[_removeArray]]></description>
+          <long-description><![CDATA[]]></long-description>
+          <tag line="332" name="author" description="James Moran"/>
+          <tag line="332" name="access" description="protected"/>
+          <tag line="332" name="return" description="" type="void">
+            <type by_reference="false">void</type>
+          </tag>
+        </docblock>
+      </method>
+      <method final="false" abstract="false" static="false" visibility="protected" namespace="global" line="355" package="JMToolkit\CSV">
+        <name>_initArray</name>
+        <full_name>_initArray</full_name>
+        <docblock line="347">
+          <description><![CDATA[_initArray]]></description>
+          <long-description><![CDATA[]]></long-description>
+          <tag line="347" name="author" description="James Moran"/>
+          <tag line="347" name="param" description="" type="array" variable="$keys">
+            <type by_reference="false">array</type>
+          </tag>
+          <tag line="347" name="access" description="protected"/>
+          <tag line="347" name="return" description="" type="void">
+            <type by_reference="false">void</type>
+          </tag>
+        </docblock>
+        <argument line="355">
+          <name>$keys</name>
+          <default><![CDATA[]]></default>
+          <type>array</type>
+        </argument>
+      </method>
+      <method final="false" abstract="false" static="false" visibility="protected" namespace="global" line="386" package="JMToolkit\CSV">
+        <name>_readFileRow</name>
+        <full_name>_readFileRow</full_name>
+        <docblock line="377">
+          <description><![CDATA[_readFileRow]]></description>
+          <long-description><![CDATA[<p>read a file from the current file marker</p>]]></long-description>
+          <tag line="377" name="author" description="James Moran"/>
+          <tag line="377" name="access" description="protected"/>
+          <tag line="377" name="return" description="" type="array">
+            <type by_reference="false">array</type>
+          </tag>
+        </docblock>
+      </method>
+      <method final="false" abstract="false" static="false" visibility="protected" namespace="global" line="417" package="JMToolkit\CSV">
+        <name>_isWhitelisted</name>
+        <full_name>_isWhitelisted</full_name>
+        <docblock line="406">
+          <description><![CDATA[_isWhitelisted]]></description>
+          <long-description><![CDATA[<p>determine if the column name is in the whitelist;
+returns TRUE if the whitelist is not set</p>]]></long-description>
+          <tag line="406" name="author" description="James Moran"/>
+          <tag line="406" name="param" description="" type="string" variable="$name">
+            <type by_reference="false">string</type>
+          </tag>
+          <tag line="406" name="access" description="protected"/>
+          <tag line="406" name="return" description="" type="boolean">
+            <type by_reference="false">boolean</type>
+          </tag>
+        </docblock>
+        <argument line="417">
+          <name>$name</name>
+          <default><![CDATA[]]></default>
+          <type/>
+        </argument>
+      </method>
+      <method final="false" abstract="false" static="false" visibility="protected" namespace="global" line="434" package="JMToolkit\CSV">
+        <name>_isBlacklisted</name>
+        <full_name>_isBlacklisted</full_name>
+        <docblock line="422">
+          <description><![CDATA[_isBlacklisted]]></description>
+          <long-description><![CDATA[<p>method to determine if the column name is on
+the blacklist of columns not to use, if one exists
+returns FALSE if the blacklist is not set</p>]]></long-description>
+          <tag line="422" name="author" description="James Moran"/>
+          <tag line="422" name="param" description="" type="string" variable="$name">
+            <type by_reference="false">string</type>
+          </tag>
+          <tag line="422" name="access" description="protected"/>
+          <tag line="422" name="return" description="" type="boolean">
+            <type by_reference="false">boolean</type>
+          </tag>
+        </docblock>
+        <argument line="434">
+          <name>$name</name>
+          <default><![CDATA[]]></default>
+          <type/>
+        </argument>
+      </method>
+    </class>
+  </file>
+  <package name="Default" full_name="Default"/>
+  <package name="JMToolkit" full_name="JMToolkit">
+    <package name="CSV" full_name="JMToolkit\CSV"/>
+  </package>
+  <namespace name="global" full_name="global"/>
+  <marker count="0">todo</marker>
+  <marker count="0">fixme</marker>
+  <deprecated count="0"/>
+</project>

@@ -18,30 +18,33 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  *
- * @author     James Moran
- * @since      Sep, 28 2011
- * @package    JM_CSV
- * @copyright  Copyright (c) 2011 James Moran
+ */
+
+
+/**
+ * JMToolkit_CSV_Parser
+ * 
+ * @package   JMToolkit_CSV
+ * @author    James Moran <moranjk75@gmail.com>
+ * @copyright 2011 James Moran
+ * @since     Sep, 28 2011
  *
- * < Description >
- *
+ * @description
  * Parses a CSV file into a complex object structure using the first row of the
  * file to define keys using a dot (.) seporated name spacing
  * 
- * EXAMPLE
- * 
+ * @example
+ * <pre>
  * user.firstname, user.lastname, user.email.work, user.email.home
  * John, Doe, work@email.com, home@email.com
- * 
- * 
- *  
- * user->firstname   == "John"
- * user->lastname    == "Doe"
- * user->email->work == "work@email.com"
- * user->email->home == "home@email.com"
+ * <br/> 
+ * $array['user']['firstname']     == "John"
+ * $array['user']['lastname']      == "Doe"
+ * $array['user']['email']['work'] == "work@email.com"
+ * $array['user']['email']['home'] == "home@email.com"
+ * </pre>
  *
  */
-
 class JMToolkit_CSV_Parser
 {
 	/**
@@ -58,7 +61,7 @@ class JMToolkit_CSV_Parser
 	 * @var mixed
 	 * @access protected
 	 */
-	protected $_file = NULL;
+	protected $_file = null;
 	
 	/**
 	 * _num_cols 
@@ -96,15 +99,14 @@ class JMToolkit_CSV_Parser
 	 * __construct
 	 *
 	 * @author James Moran
-	 * @param mixed $file_name
+	 * @param string|null $file_name
 	 * @param array $options
 	 * @access public
 	 * @return void
 	 */
 	public function __construct($file_name=NULL, $options=array())
 	{
-		if (!is_null($file_name))
-		{			
+		if (!is_null($file_name)) {			
 			$this->setFile($file_name);
 		}
 		$this->_options = array_merge(
@@ -130,7 +132,8 @@ class JMToolkit_CSV_Parser
 	 * @access public
 	 * @return JMToolkit_CSV_Parser
 	 */
-	public function setColumnMap(array $map) {
+	public function setColumnMap(array $map) 
+	{
 		if ($this->_rows_fetched > 0) {
 			throw new JMToolkit_Exception("Attempting to set map after parsing has start");
 		}
@@ -182,7 +185,7 @@ class JMToolkit_CSV_Parser
 	 * sets the file resource using the path
 	 *
 	 * @author James Moran
-	 * @param mixed $path
+	 * @param string $path
 	 * @access public
 	 * @return JMToolkit_CSV_Parser
 	 */
@@ -192,7 +195,7 @@ class JMToolkit_CSV_Parser
 			throw new JMToolkit_Exception("Path must be a string.");
 		}
 
-		$this->_file = $this->__fopen($path, 'r');
+		$this->_file = $this->_openFile($path, 'r');
 		$this->_rows_fetched = 0;
 		return $this;
 	}
@@ -204,13 +207,13 @@ class JMToolkit_CSV_Parser
 	 *
 	 * @author James Moran
 	 * @access public
-	 * @return boolean
+	 * @return array|boolean
 	 */
 	public function getNextObject()
 	{
 		$array = $this->getNextArray();
 		
-		return $array ? json_decode(json_encode($array)) : FALSE;
+		return $array ? json_decode(json_encode($array)) : false;
 	}
 
 	/**
@@ -220,7 +223,7 @@ class JMToolkit_CSV_Parser
 	 *
 	 * @author James Moran
 	 * @access public
-	 * @return array
+	 * @return array|boolean
 	 */
 	public function getNextArray()
 	{
@@ -240,7 +243,7 @@ class JMToolkit_CSV_Parser
 	}
 
 	/**
-	 * __fopen
+	 * _openFile
 	 *
 	 * @author James Moran
 	 * @param mixed $path
@@ -248,7 +251,8 @@ class JMToolkit_CSV_Parser
 	 * @access protected
 	 * @return file
 	 */
-	protected function __fopen($path, $options) {
+	protected function _openFile($path, $options) 
+	{
 		if (!file_exists($path)) {
 			throw new JMToolkit_Exception('File does not exist.');
 		}
@@ -262,7 +266,8 @@ class JMToolkit_CSV_Parser
 	 * @access protected
 	 * @return void
 	 */
-	protected function _clean() {
+	protected function _clean() 
+	{
 		foreach ($this->_setter as &$field) {
 			$field = null;
 		}
@@ -275,7 +280,8 @@ class JMToolkit_CSV_Parser
 	 * @access protected
 	 * @return array
 	 */
-	protected function _getRow() {
+	protected function _getRow() 
+	{
 		foreach ($this->_readFileRow() as $i=>$value) {
 			$this->_setter[$i] = $value;
 		}
@@ -292,7 +298,8 @@ class JMToolkit_CSV_Parser
 	 * @access protected
 	 * @return array
 	 */
-	protected function _getMappedHeaders(array $headers) {
+	protected function _getMappedHeaders(array $headers) 
+	{
 		if (is_array($this->_options['column_map'])) {
 			foreach ($headers as $i=>$header) {
 				if (isset($this->_options['column_map'])) {
@@ -312,7 +319,8 @@ class JMToolkit_CSV_Parser
 	 * @access protected
 	 * @return array
 	 */
-	protected function _getHeader() {
+	protected function _getHeader() 
+	{
 		$headers = $this->_readFileRow();
 		if (empty($headers)) {
 			throw new JMToolkit_Exception('File is missing header row');
@@ -328,7 +336,8 @@ class JMToolkit_CSV_Parser
 	 * @access protected
 	 * @return void
 	 */
-	protected function _removeArray() {
+	protected function _removeArray() 
+	{
 		unset($this->_array);
 		unset($this->_setter);
 		$this->_array  = array();
@@ -339,11 +348,12 @@ class JMToolkit_CSV_Parser
 	 * _initArray 
 	 * 
 	 * @author James Moran
-	 * @param mixed $keys 
+	 * @param array $keys 
 	 * @access protected
 	 * @return void
 	 */
-	protected function _initArray($keys) {
+	protected function _initArray(array $keys) 
+	{
 		$this->_removeArray();	
 		foreach ($keys as $column => $key) {
 			if ($this->_isWhitelisted($key) && !$this->_isBlacklisted($key)) {
@@ -373,7 +383,8 @@ class JMToolkit_CSV_Parser
 	 * @access protected
 	 * @return array
 	 */
-	protected function _readFileRow() {
+	protected function _readFileRow() 
+	{
 
 		if (is_null($this->_file)) {
 			throw new JMToolkit_Exception('No file has been provided');
@@ -399,7 +410,7 @@ class JMToolkit_CSV_Parser
 	 * returns TRUE if the whitelist is not set
 	 *
 	 * @author James Moran
-	 * @param mixed $column_name
+	 * @param string $name
 	 * @access protected
 	 * @return boolean
 	 */
@@ -416,7 +427,7 @@ class JMToolkit_CSV_Parser
 	 * returns FALSE if the blacklist is not set
 	 *
 	 * @author James Moran
-	 * @param mixed $column_name
+	 * @param string $name
 	 * @access protected
 	 * @return boolean
 	 */

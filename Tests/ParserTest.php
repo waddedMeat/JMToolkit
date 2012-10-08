@@ -8,11 +8,9 @@ require_once '../Exception.php';
  * 
  * @uses PHPUnit
  * @uses _Framework_TestCase
- * @package 
  * @version $id$
- * @copyright 1997-2005 The PHP Group
+ * @copyright 2011 James Moran
  * @author James Moran <moranjk75@gmail.com> 
- * @license PHP Version 3.0 {@link http://www.php.net/license/3_0.txt}
  */
 class ParserTest extends PHPUnit_Framework_TestCase
 {
@@ -81,7 +79,7 @@ CSV;
 		);
 		$parser = $this->getMock(
 			'JMToolkit_CSV_Parser',
-			array('__fopen'),
+			array('_openFile'),
 			array(
 				'filename', 
 				$options
@@ -99,17 +97,43 @@ CSV;
 	 */
 	public function testSettingFile()
 	{
-		$parser = $this->getmock('JMToolkit_CSV_Parser', array('__fopen', '_readFileRow'));
+		$parser = $this->getmock('JMToolkit_CSV_Parser', array('_openFile', '_readFileRow'));
 
 		$test = uniqid();
 
 		$parser->expects($this->once())
-			->method('__fopen')
+			->method('_openFile')
 			->will($this->returnvalue($test));
 
-		$parser->setfile($test);
+			$parser->setfile($test);
 
 		$this->assertattributeequals($test, '_file', $parser);
+
+		return $parser;
+	}
+
+	/**
+	 * testSettingFileResetsTheRowCounter
+	 *
+	 * @access public
+	 * @return void
+	 *
+	 * @depends testSettingFile
+	 */
+	public function testSettingFileResetsTheRowsFetchedCounter($parser)
+	{
+		$test = uniqid();
+
+		$parser->expects($this->any())
+			->method('_readFileRow')
+			->will($this->returnValue(str_getcsv($this->_csv)));
+
+		$this->assertattributeequals(0, '_rows_fetched', $parser);
+		$parser->getNextArray();
+		$this->assertattributeequals(1, '_rows_fetched', $parser);
+
+		$parser->setfile($test);
+		$this->assertattributeequals(0, '_rows_fetched', $parser);
 	}
 
 	/**
@@ -122,7 +146,7 @@ CSV;
 	 */
 	public function testSettingFileWithNonStringPath()
 	{
-		$parser = $this->getmock('JMToolkit_CSV_Parser', array('__fopen', '_readFileRow'));
+		$parser = $this->getmock('JMToolkit_CSV_Parser', array('_openFile', '_readFileRow'));
 
 		$parser->setfile(array());
 	}
@@ -135,7 +159,7 @@ CSV;
 	 */
 	public function testSetters()
 	{
-		$parser = $this->getmock('JMToolkit_CSV_Parser', array('__fopen', '_readFileRow'));
+		$parser = $this->getmock('JMToolkit_CSV_Parser', array('_openFile', '_readFileRow'));
 
 		$options = array(
 			'whitelist'  => array(
@@ -167,7 +191,7 @@ CSV;
 	 */
 	public function testGetNextArrayIncreasesTheRowsFetched()
 	{
-		$parser = $this->getmock('JMToolkit_CSV_Parser', array('__fopen', '_readFileRow'));
+		$parser = $this->getmock('JMToolkit_CSV_Parser', array('_openFile', '_readFileRow'));
 
 		$parser->expects($this->any())
 			->method('_readFileRow')
@@ -192,7 +216,7 @@ CSV;
 
 	public function testCleanGetsCalled()
 	{
-		$parser = $this->getmock('JMToolkit_CSV_Parser', array('_clean', '__fopen', '_readFileRow'));
+		$parser = $this->getmock('JMToolkit_CSV_Parser', array('_clean', '_openFile', '_readFileRow'));
 
 		$parser->expects($this->any())
 			->method('_readFileRow')
@@ -209,7 +233,7 @@ CSV;
 
 	public function testGettingNextObjectReturnsAnObject()
 	{
-		$parser = $this->getmock('JMToolkit_CSV_Parser', array('getNextArray', '__fopen', '_readFileRow'));
+		$parser = $this->getmock('JMToolkit_CSV_Parser', array('getNextArray', '_openFile', '_readFileRow'));
 
 		$parser->expects($this->once())
 			->method('getNextArray')
@@ -229,7 +253,7 @@ CSV;
 	 */
 	public function testColumnMap()
 	{
-		$parser = $this->getmock('JMToolkit_CSV_Parser', array('__fopen', '_readFileRow'));
+		$parser = $this->getmock('JMToolkit_CSV_Parser', array('_openFile', '_readFileRow'));
 
 		$parser->expects($this->any())
 			->method('_readFileRow')
@@ -258,7 +282,7 @@ CSV;
 
 	public function testBlacklistingColumns()
 	{
-		$parser = $this->getmock('JMToolkit_CSV_Parser', array('__fopen', '_readFileRow'));
+		$parser = $this->getmock('JMToolkit_CSV_Parser', array('_openFile', '_readFileRow'));
 
 		$parser->expects($this->any())
 			->method('_readFileRow')
@@ -277,7 +301,7 @@ CSV;
 
 	public function testWhitelistingColumns()
 	{
-		$parser = $this->getmock('JMToolkit_CSV_Parser', array('__fopen', '_readFileRow'));
+		$parser = $this->getmock('JMToolkit_CSV_Parser', array('_openFile', '_readFileRow'));
 
 		$parser->expects($this->any())
 			->method('_readFileRow')
@@ -302,7 +326,7 @@ CSV;
 
 	public function testWhiteAndBlackListingColumns()
 	{
-		$parser = $this->getmock('JMToolkit_CSV_Parser', array('__fopen', '_readFileRow'));
+		$parser = $this->getmock('JMToolkit_CSV_Parser', array('_openFile', '_readFileRow'));
 
 		$parser->expects($this->any())
 			->method('_readFileRow')

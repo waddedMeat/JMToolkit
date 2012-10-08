@@ -1,0 +1,632 @@
+<!DOCTYPE html><html lang="en">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<meta name="viewport" content="width=device-width; initial-scale=1.0; maximum-scale=1.0; user-scalable=0;">
+<meta charset="utf-8">
+<title>phpDocumentor » \JMToolkit_CSV_Parser</title>
+<meta name="author" content="Mike van Riel">
+<meta name="description" content="">
+<link href="../css/template.css" rel="stylesheet" media="all">
+<script src="../js/jquery-1.7.1.min.js" type="text/javascript"></script><script src="../js/jquery-ui-1.8.2.custom.min.js" type="text/javascript"></script><script src="../js/jquery.mousewheel.min.js" type="text/javascript"></script><script src="../js/bootstrap.js" type="text/javascript"></script><script src="../js/template.js" type="text/javascript"></script><script src="../js/prettify/prettify.min.js" type="text/javascript"></script><link rel="shortcut icon" href="../img/favicon.ico">
+<link rel="apple-touch-icon" href="../img/apple-touch-icon.png">
+<link rel="apple-touch-icon" sizes="72x72" href="../img/apple-touch-icon-72x72.png">
+<link rel="apple-touch-icon" sizes="114x114" href="../img/apple-touch-icon-114x114.png">
+</head>
+<body>
+<div class="navbar navbar-fixed-top">
+<div class="navbar-inner"><div class="container">
+<a class="btn btn-navbar" data-toggle="collapse" data-target=".nav-collapse"><span class="icon-bar"></span><span class="icon-bar"></span><span class="icon-bar"></span></a><a class="brand" href="../index.html">phpDocumentor</a><div class="nav-collapse"><ul class="nav">
+<li class="dropdown">
+<a href="#api" class="dropdown-toggle" data-toggle="dropdown">
+                                    API Documentation <b class="caret"></b></a><ul class="dropdown-menu">
+<li><a>Packages</a></li>
+<li><a href="../packages/JMToolkit.html"><i class="icon-folder-open"></i> JMToolkit</a></li>
+</ul>
+</li>
+<li class="dropdown" id="charts-menu">
+<a href="#charts" class="dropdown-toggle" data-toggle="dropdown">
+                                    Charts <b class="caret"></b></a><ul class="dropdown-menu"><li><a href="../graph_class.html"><i class="icon-list-alt"></i> Class hierarchy diagram</a></li></ul>
+</li>
+<li class="dropdown" id="reports-menu">
+<a href="#reports" class="dropdown-toggle" data-toggle="dropdown">
+                                    Reports <b class="caret"></b></a><ul class="dropdown-menu">
+<li><a href="../errors.html"><i class="icon-remove-sign"></i> Errors 
+                <span class="label label-info">0</span></a></li>
+<li><a href="../markers.html"><i class="icon-map-marker"></i> Markers 
+                <ul></ul></a></li>
+<li><a href="../deprecated.html"><i class="icon-stop"></i> Deprecated elements 
+                <span class="label label-info">0</span></a></li>
+</ul>
+</li>
+</ul></div>
+</div></div>
+<div class="go_to_top"><a href="#___" style="color: inherit">Back to top  <i class="icon-upload icon-white"></i></a></div>
+</div>
+<div id="___" class="container">
+<noscript><div class="alert alert-warning">
+                            Javascript is disabled; several features are only available
+                            if Javascript is enabled.
+                        </div></noscript>
+<div class="row">
+<div class="span4">
+<span class="btn-group visibility" data-toggle="buttons-checkbox"><button class="btn public active" title="Show public elements">Public</button><button class="btn protected" title="Show protected elements">Protected</button><button class="btn private" title="Show private elements">Private</button><button class="btn inherited active" title="Show inherited elements">Inherited</button></span><div class="btn-group view pull-right" data-toggle="buttons-radio">
+<button class="btn details" title="Show descriptions and method names"><i class="icon-list"></i></button><button class="btn simple" title="Show only method names"><i class="icon-align-justify"></i></button>
+</div>
+<ul class="side-nav nav nav-list">
+<li class="nav-header">
+<i class="icon-custom icon-method"></i> Methods
+                    <ul>
+<li class="method public "><a href="#method___construct" title="__construct :: __construct"><span class="description">__construct</span><pre>__construct()</pre></a></li>
+<li class="method public "><a href="#method_getNextArray" title="getNextArray :: getNextArray"><span class="description">getNextArray</span><pre>getNextArray()</pre></a></li>
+<li class="method public "><a href="#method_getNextObject" title="getNextObject :: getNextObject"><span class="description">getNextObject</span><pre>getNextObject()</pre></a></li>
+<li class="method public "><a href="#method_setBlacklist" title="setBlacklist :: setBlacklist"><span class="description">setBlacklist</span><pre>setBlacklist()</pre></a></li>
+<li class="method public "><a href="#method_setColumnMap" title="setColumnMap :: setColumnMap"><span class="description">setColumnMap</span><pre>setColumnMap()</pre></a></li>
+<li class="method public "><a href="#method_setFile" title="setFile :: setFile"><span class="description">setFile</span><pre>setFile()</pre></a></li>
+<li class="method public "><a href="#method_setWhitelist" title="setWhitelist :: setWhitelist"><span class="description">setWhitelist</span><pre>setWhitelist()</pre></a></li>
+</ul>
+</li>
+<li class="nav-header protected">» Protected
+                    <ul>
+<li class="method protected "><a href="#method__clean" title="_clean :: _clean"><span class="description">_clean</span><pre>_clean()</pre></a></li>
+<li class="method protected "><a href="#method__getHeader" title="_getHeader :: _getHeader"><span class="description">_getHeader</span><pre>_getHeader()</pre></a></li>
+<li class="method protected "><a href="#method__getMappedHeaders" title="_getMappedHeaders :: _getMappedHeaders"><span class="description">_getMappedHeaders</span><pre>_getMappedHeaders()</pre></a></li>
+<li class="method protected "><a href="#method__getRow" title="_getRow :: _getRow"><span class="description">_getRow</span><pre>_getRow()</pre></a></li>
+<li class="method protected "><a href="#method__initArray" title="_initArray :: _initArray"><span class="description">_initArray</span><pre>_initArray()</pre></a></li>
+<li class="method protected "><a href="#method__isBlacklisted" title="_isBlacklisted :: _isBlacklisted"><span class="description">_isBlacklisted</span><pre>_isBlacklisted()</pre></a></li>
+<li class="method protected "><a href="#method__isWhitelisted" title="_isWhitelisted :: _isWhitelisted"><span class="description">_isWhitelisted</span><pre>_isWhitelisted()</pre></a></li>
+<li class="method protected "><a href="#method__openFile" title="_openFile :: _openFile"><span class="description">_openFile</span><pre>_openFile()</pre></a></li>
+<li class="method protected "><a href="#method__readFileRow" title="_readFileRow :: _readFileRow"><span class="description">_readFileRow</span><pre>_readFileRow()</pre></a></li>
+<li class="method protected "><a href="#method__removeArray" title="_removeArray :: _removeArray"><span class="description">_removeArray</span><pre>_removeArray()</pre></a></li>
+</ul>
+</li>
+<li class="nav-header">
+<i class="icon-custom icon-property"></i> Properties
+                    <ul></ul>
+</li>
+<li class="nav-header protected">» Protected
+                    <ul>
+<li class="property protected "><a href="#property__array" title="$_array :: _array"><span class="description">_array</span><pre>$_array</pre></a></li>
+<li class="property protected "><a href="#property__file" title="$_file :: _file"><span class="description">_file</span><pre>$_file</pre></a></li>
+<li class="property protected "><a href="#property__num_cols" title="$_num_cols :: _num_cols"><span class="description">_num_cols</span><pre>$_num_cols</pre></a></li>
+<li class="property protected "><a href="#property__options" title="$_options :: _options"><span class="description">_options</span><pre>$_options</pre></a></li>
+<li class="property protected "><a href="#property__rows_fetched" title="$_rows_fetched :: _rows_fetched"><span class="description">_rows_fetched</span><pre>$_rows_fetched</pre></a></li>
+<li class="property protected "><a href="#property__setter" title="$_setter :: _setter"><span class="description">_setter</span><pre>$_setter</pre></a></li>
+</ul>
+</li>
+</ul>
+</div>
+<div class="span8">
+<a id="\JMToolkit_CSV_Parser"></a><ul class="breadcrumb">
+<li>
+<a href="../index.html"><i class="icon-custom icon-class"></i></a><span class="divider">\</span>
+</li>
+<li><a href="../namespaces/global.html">global</a></li>
+<li class="active">
+<span class="divider">\</span><a href="../classes/JMToolkit_CSV_Parser.html">JMToolkit_CSV_Parser</a>
+</li>
+</ul>
+<div class="element class">
+<p class="short_description">JMToolkit_CSV_Parser</p>
+<div class="details">
+<div class="long_description"></div>
+<table class="table table-bordered">
+<tr>
+<th>package</th>
+<td><a href="../packages/JMToolkit.CSV.html">JMToolkit_CSV</a></td>
+</tr>
+<tr>
+<th>author</th>
+<td><a href="mailto:moranjk75@gmail.com">James Moran</a></td>
+</tr>
+<tr>
+<th>copyright</th>
+<td>2011 James Moran</td>
+</tr>
+<tr>
+<th>since</th>
+<td>Sep, 28 2011</td>
+</tr>
+<tr>
+<th>description</th>
+<td>Parses a CSV file into a complex object structure using the first row of the
+file to define keys using a dot (.) seporated name spacing</td>
+</tr>
+<tr>
+<th>example</th>
+<td><pre>
+user.firstname, user.lastname, user.email.work, user.email.home
+John, Doe, work@email.com, home@email.com
+<br/>
+$array['user']['firstname']     == "John"
+$array['user']['lastname']      == "Doe"
+$array['user']['email']['work'] == "work@email.com"
+$array['user']['email']['home'] == "home@email.com"
+</pre></td>
+</tr>
+</table>
+<h3>
+<i class="icon-custom icon-method"></i> Methods</h3>
+<a id="method___construct"></a><div class="element clickable method public method___construct" data-toggle="collapse" data-target=".method___construct .collapse">
+<h2>__construct</h2>
+<pre>__construct(string | null $file_name, array $options) : void</pre>
+<div class="labels"></div>
+<div class="row collapse"><div class="detail-description">
+<div class="long_description"></div>
+<table class="table table-bordered">
+<tr>
+<th>author</th>
+<td><a href="">James Moran</a></td>
+</tr>
+<tr>
+<th>access</th>
+<td>public</td>
+</tr>
+</table>
+<h3>Parameters</h3>
+<div class="subelement argument">
+<h4>$file_name</h4>
+<code>string</code><code>null</code>
+</div>
+<div class="subelement argument">
+<h4>$options</h4>
+<code>array</code>
+</div>
+</div></div>
+</div>
+<a id="method_getNextArray"></a><div class="element clickable method public method_getNextArray" data-toggle="collapse" data-target=".method_getNextArray .collapse">
+<h2>getNextArray</h2>
+<pre>getNextArray() : array | boolean</pre>
+<div class="labels"></div>
+<div class="row collapse"><div class="detail-description">
+<div class="long_description"><p>retrieve the row in an array format</p></div>
+<table class="table table-bordered">
+<tr>
+<th>author</th>
+<td><a href="">James Moran</a></td>
+</tr>
+<tr>
+<th>access</th>
+<td>public</td>
+</tr>
+</table>
+<h3>Returns</h3>
+<div class="subelement response">
+<code>array</code><code>boolean</code>
+</div>
+</div></div>
+</div>
+<a id="method_getNextObject"></a><div class="element clickable method public method_getNextObject" data-toggle="collapse" data-target=".method_getNextObject .collapse">
+<h2>getNextObject</h2>
+<pre>getNextObject() : array | boolean</pre>
+<div class="labels"></div>
+<div class="row collapse"><div class="detail-description">
+<div class="long_description"><p>retrieve the next row as and object</p></div>
+<table class="table table-bordered">
+<tr>
+<th>author</th>
+<td><a href="">James Moran</a></td>
+</tr>
+<tr>
+<th>access</th>
+<td>public</td>
+</tr>
+</table>
+<h3>Returns</h3>
+<div class="subelement response">
+<code>array</code><code>boolean</code>
+</div>
+</div></div>
+</div>
+<a id="method_setBlacklist"></a><div class="element clickable method public method_setBlacklist" data-toggle="collapse" data-target=".method_setBlacklist .collapse">
+<h2>setBlacklist</h2>
+<pre>setBlacklist(array $list) : <a href="../classes/JMToolkit_CSV_Parser.html">\JMToolkit_CSV_Parser</a></pre>
+<div class="labels"></div>
+<div class="row collapse"><div class="detail-description">
+<div class="long_description"><p>sets a blacklist of columns in the csv file that will not be used</p></div>
+<table class="table table-bordered">
+<tr>
+<th>author</th>
+<td><a href="">James Moran</a></td>
+</tr>
+<tr>
+<th>access</th>
+<td>public</td>
+</tr>
+</table>
+<h3>Parameters</h3>
+<div class="subelement argument">
+<h4>$list</h4>
+<code>array</code>
+</div>
+<h3>Returns</h3>
+<div class="subelement response"><code><a href="../classes/JMToolkit_CSV_Parser.html">\JMToolkit_CSV_Parser</a></code></div>
+</div></div>
+</div>
+<a id="method_setColumnMap"></a><div class="element clickable method public method_setColumnMap" data-toggle="collapse" data-target=".method_setColumnMap .collapse">
+<h2>setColumnMap</h2>
+<pre>setColumnMap(array $map) : <a href="../classes/JMToolkit_CSV_Parser.html">\JMToolkit_CSV_Parser</a></pre>
+<div class="labels"></div>
+<div class="row collapse"><div class="detail-description">
+<div class="long_description"><p>sets a mapping array for altering column headers to another column name,
+even a '.' seperated column name to take advantage of nested objects or
+arrays</p></div>
+<table class="table table-bordered">
+<tr>
+<th>author</th>
+<td><a href="">James Moran</a></td>
+</tr>
+<tr>
+<th>access</th>
+<td>public</td>
+</tr>
+</table>
+<h3>Parameters</h3>
+<div class="subelement argument">
+<h4>$map</h4>
+<code>array</code>
+</div>
+<h3>Returns</h3>
+<div class="subelement response"><code><a href="../classes/JMToolkit_CSV_Parser.html">\JMToolkit_CSV_Parser</a></code></div>
+</div></div>
+</div>
+<a id="method_setFile"></a><div class="element clickable method public method_setFile" data-toggle="collapse" data-target=".method_setFile .collapse">
+<h2>setFile</h2>
+<pre>setFile(string $path) : <a href="../classes/JMToolkit_CSV_Parser.html">\JMToolkit_CSV_Parser</a></pre>
+<div class="labels"></div>
+<div class="row collapse"><div class="detail-description">
+<div class="long_description"><p>sets the file resource using the path</p></div>
+<table class="table table-bordered">
+<tr>
+<th>author</th>
+<td><a href="">James Moran</a></td>
+</tr>
+<tr>
+<th>access</th>
+<td>public</td>
+</tr>
+</table>
+<h3>Parameters</h3>
+<div class="subelement argument">
+<h4>$path</h4>
+<code>string</code>
+</div>
+<h3>Returns</h3>
+<div class="subelement response"><code><a href="../classes/JMToolkit_CSV_Parser.html">\JMToolkit_CSV_Parser</a></code></div>
+</div></div>
+</div>
+<a id="method_setWhitelist"></a><div class="element clickable method public method_setWhitelist" data-toggle="collapse" data-target=".method_setWhitelist .collapse">
+<h2>setWhitelist</h2>
+<pre>setWhitelist(array $list) : <a href="../classes/JMToolkit_CSV_Parser.html">\JMToolkit_CSV_Parser</a></pre>
+<div class="labels"></div>
+<div class="row collapse"><div class="detail-description">
+<div class="long_description"><p>sets a whitelist of columns that will be used from the csv file</p></div>
+<table class="table table-bordered">
+<tr>
+<th>author</th>
+<td><a href="">James Moran</a></td>
+</tr>
+<tr>
+<th>access</th>
+<td>public</td>
+</tr>
+</table>
+<h3>Parameters</h3>
+<div class="subelement argument">
+<h4>$list</h4>
+<code>array</code>
+</div>
+<h3>Returns</h3>
+<div class="subelement response"><code><a href="../classes/JMToolkit_CSV_Parser.html">\JMToolkit_CSV_Parser</a></code></div>
+</div></div>
+</div>
+<a id="method__clean"></a><div class="element clickable method protected method__clean" data-toggle="collapse" data-target=".method__clean .collapse">
+<h2>_clean</h2>
+<pre>_clean() : void</pre>
+<div class="labels"></div>
+<div class="row collapse"><div class="detail-description">
+<div class="long_description"></div>
+<table class="table table-bordered">
+<tr>
+<th>author</th>
+<td><a href="">James Moran</a></td>
+</tr>
+<tr>
+<th>access</th>
+<td>protected</td>
+</tr>
+</table>
+</div></div>
+</div>
+<a id="method__getHeader"></a><div class="element clickable method protected method__getHeader" data-toggle="collapse" data-target=".method__getHeader .collapse">
+<h2>_getHeader</h2>
+<pre>_getHeader() : array</pre>
+<div class="labels"></div>
+<div class="row collapse"><div class="detail-description">
+<div class="long_description"><p>retrieve the column headers</p></div>
+<table class="table table-bordered">
+<tr>
+<th>author</th>
+<td><a href="">James Moran</a></td>
+</tr>
+<tr>
+<th>access</th>
+<td>protected</td>
+</tr>
+</table>
+<h3>Returns</h3>
+<div class="subelement response"><code>array</code></div>
+</div></div>
+</div>
+<a id="method__getMappedHeaders"></a><div class="element clickable method protected method__getMappedHeaders" data-toggle="collapse" data-target=".method__getMappedHeaders .collapse">
+<h2>_getMappedHeaders</h2>
+<pre>_getMappedHeaders(array $headers) : array</pre>
+<div class="labels"></div>
+<div class="row collapse"><div class="detail-description">
+<div class="long_description"><p>maps headers to those supplied in the map</p></div>
+<table class="table table-bordered">
+<tr>
+<th>author</th>
+<td><a href="">James Moran</a></td>
+</tr>
+<tr>
+<th>access</th>
+<td>protected</td>
+</tr>
+</table>
+<h3>Parameters</h3>
+<div class="subelement argument">
+<h4>$headers</h4>
+<code>array</code>
+</div>
+<h3>Returns</h3>
+<div class="subelement response"><code>array</code></div>
+</div></div>
+</div>
+<a id="method__getRow"></a><div class="element clickable method protected method__getRow" data-toggle="collapse" data-target=".method__getRow .collapse">
+<h2>_getRow</h2>
+<pre>_getRow() : array</pre>
+<div class="labels"></div>
+<div class="row collapse"><div class="detail-description">
+<div class="long_description"></div>
+<table class="table table-bordered">
+<tr>
+<th>author</th>
+<td><a href="">James Moran</a></td>
+</tr>
+<tr>
+<th>access</th>
+<td>protected</td>
+</tr>
+</table>
+<h3>Returns</h3>
+<div class="subelement response"><code>array</code></div>
+</div></div>
+</div>
+<a id="method__initArray"></a><div class="element clickable method protected method__initArray" data-toggle="collapse" data-target=".method__initArray .collapse">
+<h2>_initArray</h2>
+<pre>_initArray(array $keys) : void</pre>
+<div class="labels"></div>
+<div class="row collapse"><div class="detail-description">
+<div class="long_description"></div>
+<table class="table table-bordered">
+<tr>
+<th>author</th>
+<td><a href="">James Moran</a></td>
+</tr>
+<tr>
+<th>access</th>
+<td>protected</td>
+</tr>
+</table>
+<h3>Parameters</h3>
+<div class="subelement argument">
+<h4>$keys</h4>
+<code>array</code>
+</div>
+</div></div>
+</div>
+<a id="method__isBlacklisted"></a><div class="element clickable method protected method__isBlacklisted" data-toggle="collapse" data-target=".method__isBlacklisted .collapse">
+<h2>_isBlacklisted</h2>
+<pre>_isBlacklisted(string $name) : boolean</pre>
+<div class="labels"></div>
+<div class="row collapse"><div class="detail-description">
+<div class="long_description"><p>method to determine if the column name is on
+the blacklist of columns not to use, if one exists
+returns FALSE if the blacklist is not set</p></div>
+<table class="table table-bordered">
+<tr>
+<th>author</th>
+<td><a href="">James Moran</a></td>
+</tr>
+<tr>
+<th>access</th>
+<td>protected</td>
+</tr>
+</table>
+<h3>Parameters</h3>
+<div class="subelement argument">
+<h4>$name</h4>
+<code>string</code>
+</div>
+<h3>Returns</h3>
+<div class="subelement response"><code>boolean</code></div>
+</div></div>
+</div>
+<a id="method__isWhitelisted"></a><div class="element clickable method protected method__isWhitelisted" data-toggle="collapse" data-target=".method__isWhitelisted .collapse">
+<h2>_isWhitelisted</h2>
+<pre>_isWhitelisted(string $name) : boolean</pre>
+<div class="labels"></div>
+<div class="row collapse"><div class="detail-description">
+<div class="long_description"><p>determine if the column name is in the whitelist;
+returns TRUE if the whitelist is not set</p></div>
+<table class="table table-bordered">
+<tr>
+<th>author</th>
+<td><a href="">James Moran</a></td>
+</tr>
+<tr>
+<th>access</th>
+<td>protected</td>
+</tr>
+</table>
+<h3>Parameters</h3>
+<div class="subelement argument">
+<h4>$name</h4>
+<code>string</code>
+</div>
+<h3>Returns</h3>
+<div class="subelement response"><code>boolean</code></div>
+</div></div>
+</div>
+<a id="method__openFile"></a><div class="element clickable method protected method__openFile" data-toggle="collapse" data-target=".method__openFile .collapse">
+<h2>_openFile</h2>
+<pre>_openFile(mixed $path, mixed $options) : \file</pre>
+<div class="labels"></div>
+<div class="row collapse"><div class="detail-description">
+<div class="long_description"></div>
+<table class="table table-bordered">
+<tr>
+<th>author</th>
+<td><a href="">James Moran</a></td>
+</tr>
+<tr>
+<th>access</th>
+<td>protected</td>
+</tr>
+</table>
+<h3>Parameters</h3>
+<div class="subelement argument">
+<h4>$path</h4>
+<code>mixed</code>
+</div>
+<div class="subelement argument">
+<h4>$options</h4>
+<code>mixed</code>
+</div>
+<h3>Returns</h3>
+<div class="subelement response"><code>\file</code></div>
+</div></div>
+</div>
+<a id="method__readFileRow"></a><div class="element clickable method protected method__readFileRow" data-toggle="collapse" data-target=".method__readFileRow .collapse">
+<h2>_readFileRow</h2>
+<pre>_readFileRow() : array</pre>
+<div class="labels"></div>
+<div class="row collapse"><div class="detail-description">
+<div class="long_description"><p>read a file from the current file marker</p></div>
+<table class="table table-bordered">
+<tr>
+<th>author</th>
+<td><a href="">James Moran</a></td>
+</tr>
+<tr>
+<th>access</th>
+<td>protected</td>
+</tr>
+</table>
+<h3>Returns</h3>
+<div class="subelement response"><code>array</code></div>
+</div></div>
+</div>
+<a id="method__removeArray"></a><div class="element clickable method protected method__removeArray" data-toggle="collapse" data-target=".method__removeArray .collapse">
+<h2>_removeArray</h2>
+<pre>_removeArray() : void</pre>
+<div class="labels"></div>
+<div class="row collapse"><div class="detail-description">
+<div class="long_description"></div>
+<table class="table table-bordered">
+<tr>
+<th>author</th>
+<td><a href="">James Moran</a></td>
+</tr>
+<tr>
+<th>access</th>
+<td>protected</td>
+</tr>
+</table>
+</div></div>
+</div>
+<h3>
+<i class="icon-custom icon-property"></i> Properties</h3>
+<a id="property__array"> </a><div class="element clickable property protected property__array" data-toggle="collapse" data-target=".property__array .collapse">
+<h2>_array</h2>
+<pre>$_array : array</pre>
+<div class="labels"></div>
+<div class="row collapse"><div class="detail-description">
+<div class="long_description"></div>
+<table class="table table-bordered"><tr>
+<th>access</th>
+<td>protected</td>
+</tr></table>
+</div></div>
+</div>
+<a id="property__file"> </a><div class="element clickable property protected property__file" data-toggle="collapse" data-target=".property__file .collapse">
+<h2>_file</h2>
+<pre>$_file : mixed</pre>
+<div class="labels"></div>
+<div class="row collapse"><div class="detail-description">
+<div class="long_description"></div>
+<table class="table table-bordered"><tr>
+<th>access</th>
+<td>protected</td>
+</tr></table>
+</div></div>
+</div>
+<a id="property__num_cols"> </a><div class="element clickable property protected property__num_cols" data-toggle="collapse" data-target=".property__num_cols .collapse">
+<h2>_num_cols</h2>
+<pre>$_num_cols : mixed</pre>
+<div class="labels"></div>
+<div class="row collapse"><div class="detail-description">
+<div class="long_description"></div>
+<table class="table table-bordered"><tr>
+<th>access</th>
+<td>protected</td>
+</tr></table>
+</div></div>
+</div>
+<a id="property__options"> </a><div class="element clickable property protected property__options" data-toggle="collapse" data-target=".property__options .collapse">
+<h2>_options</h2>
+<pre>$_options : array</pre>
+<div class="labels"></div>
+<div class="row collapse"><div class="detail-description">
+<div class="long_description"></div>
+<table class="table table-bordered"><tr>
+<th>access</th>
+<td>protected</td>
+</tr></table>
+</div></div>
+</div>
+<a id="property__rows_fetched"> </a><div class="element clickable property protected property__rows_fetched" data-toggle="collapse" data-target=".property__rows_fetched .collapse">
+<h2>_rows_fetched</h2>
+<pre>$_rows_fetched : mixed</pre>
+<div class="labels"></div>
+<div class="row collapse"><div class="detail-description">
+<div class="long_description"></div>
+<table class="table table-bordered"><tr>
+<th>access</th>
+<td>protected</td>
+</tr></table>
+</div></div>
+</div>
+<a id="property__setter"> </a><div class="element clickable property protected property__setter" data-toggle="collapse" data-target=".property__setter .collapse">
+<h2>_setter</h2>
+<pre>$_setter : array</pre>
+<div class="labels"></div>
+<div class="row collapse"><div class="detail-description">
+<div class="long_description"></div>
+<table class="table table-bordered"><tr>
+<th>access</th>
+<td>protected</td>
+</tr></table>
+</div></div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="row"><footer class="span12">
+            Template is built using <a href="http://twitter.github.com/bootstrap/">Twitter Bootstrap 2</a> and icons provided by <a href="http://glyphicons.com/">Glyphicons</a>.<br>
+            Documentation is powered by <a href="http://www.phpdoc.org/">phpDocumentor 2.0.0a10</a> and<br>
+            generated on 2012-10-08T07:20:50-04:00.<br></footer></div>
+</div>
+</body>
+</html>
