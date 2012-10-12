@@ -302,7 +302,7 @@ class JMToolkit_CSV_Parser
 	{
 		if (is_array($this->_options['column_map'])) {
 			foreach ($headers as $i=>$header) {
-				if (isset($this->_options['column_map'])) {
+				if (isset($this->_options['column_map'][$header])) {
 					$headers[$i] = $this->_options['column_map'][$header];
 				}
 			}
