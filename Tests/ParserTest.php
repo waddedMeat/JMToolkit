@@ -257,19 +257,19 @@ CSV;
 
 		$parser->expects($this->any())
 			->method('_readFileRow')
-			->will($this->returnValue(str_getcsv('firstname,lastname,age,sex')));
+			->will($this->returnValue(str_getcsv('firstname,lastname,age,user.sex')));
 
 		$map = array(
 			'firstname' => 'user.name.first', 
 			'lastname'  => 'user.name.last', 
 			'age'       => 'user.age', 
-			'sex'       => 'user.sex'
 		);
 
 		$parser->setColumnMap($map);
 		$array = $parser->getNextArray();
 
-		$this->assertNotEmpty($array);	
+		$this->assertNotEmpty($array);
+
 		$this->assertNotEmpty($array['user']);
 		$this->assertEquals(3, count($array['user']));
 		$this->assertEquals(2, count($array['user']['name']));
@@ -277,7 +277,7 @@ CSV;
 		$this->assertEquals("firstname",$array['user']['name']['first']);
 		$this->assertEquals("lastname",$array['user']['name']['last']);
 		$this->assertEquals("age",$array['user']['age']);
-		$this->assertEquals("sex",$array['user']['sex']);
+		$this->assertEquals("user.sex",$array['user']['sex']);
 	}
 
 	public function testBlacklistingColumns()
@@ -321,6 +321,9 @@ CSV;
 		$this->assertFalse(isset($array['user']['age']));
 		$this->assertTrue(isset($array['user']['name']['last']));
 		$this->assertTrue(isset($array['user']['sex']));
+
+		$this->assertEquals('user.name.last', $array['user']['name']['last']);
+		$this->assertEquals('user.sex', $array['user']['sex']);
 	}
 
 
@@ -348,6 +351,8 @@ CSV;
 		$this->assertTrue(isset($array['user']['name']['last']));
 		$this->assertFalse(isset($array['user']['age']));
 		$this->assertFalse(isset($array['user']['sex']));
+
+		$this->assertEquals('user.name.last', $array['user']['name']['last']);
 	}
 
 
@@ -417,6 +422,12 @@ CSV;
 		$array = $parser->getNextArray();
 	}
 
+	/**
+	 * testCleanMethod 
+	 * 
+	 * @access public
+	 * @return void
+	 */
 	public function testCleanMethod()
 	{
 		$parser = $this->getmock('ParserTestHelper', array('_readFileRow'));
@@ -448,6 +459,16 @@ CSV;
 
 }
 
+/**
+ * ParserTestHelper 
+ * 
+ * @uses JMToolkit
+ * @uses _CSV_Parser
+ * @package 
+ * @version $id$
+ * @copyright 2012 Avectra
+ * @author James Moran <moranjk75@gmail.com> 
+ */
 class ParserTestHelper extends JMToolkit_CSV_Parser
 {
 	public function testMethod($name, $args=array())
