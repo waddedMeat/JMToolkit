@@ -457,6 +457,32 @@ CSV;
 		$this->assertAttributeEquals($array, '_array', $parser);
 	}
 
+	/**
+	 * testNumbersInHeaders 
+	 * 
+	 * @access public
+	 * @return void
+	 */
+	public function testNumbersInHeaders()
+	{
+		$parser = $this->getmock('ParserTestHelper', array('_readFileRow'));
+
+		$parser->expects($this->any())
+			->method('_readFileRow')
+			->will(
+				$this->returnValue(
+					str_getcsv('"categories.0.name","categories.1.name","categories.0.description","categories.1.description"')
+				)
+			);
+
+		$array = $parser->getNextArray();
+
+		$this->assertEquals(2, count($array['categories']));
+		$this->assertEquals('categories.0.name', $array['categories'][0]['name']);
+		$this->assertEquals('categories.1.name', $array['categories'][1]['name']);
+		$this->assertEquals('categories.0.description', $array['categories'][0]['description']);
+		$this->assertEquals('categories.1.description', $array['categories'][1]['description']);
+	}
 }
 
 /**
