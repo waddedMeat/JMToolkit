@@ -403,7 +403,6 @@ class JMToolkit_CSV_Parser
 			if ($this->_num_cols == 0) {
 				$this->_num_cols = $size;
 			} elseif ($size != $this->_num_cols) {
-				var_dump($return);
 				throw new JMToolkit_Exception(sprintf('Invalid file: Error on row %s',$this->_rows_fetched+1));
 			}
 		}
