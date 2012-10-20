@@ -282,10 +282,15 @@ class JMToolkit_CSV_Parser
 	 */
 	protected function _getRow() 
 	{
-		foreach ($this->_readFileRow() as $i=>$value) {
-			$this->_setter[$i] = $value;
+		$row = $this->_readFileRow();
+		$return = false;
+		if (!empty($row)) {
+			foreach ($row as $i=>$value) {
+				$this->_setter[$i] = $value;
+			}
+			$return = $this->_array;
 		}
-		return $this->_array;
+		return $return;
 	}
 
 	/**
@@ -393,12 +398,13 @@ class JMToolkit_CSV_Parser
 		$return = fgetcsv($this->_file);
 
 		$size = count($return);
-
-		if ($size != $this->_num_cols) {
-			throw new JMToolkit_Exception(sprintf('Invalid file: Error on row %s',$this->_rows_fetched+1));
-		}
-		else {
-			$this->_num_cols = $size;
+		
+		if (!empty($return)) {
+			if ($this->_num_cols == 0) {
+				$this->_num_cols = $size;
+			} elseif ($size != $this->_num_cols) {
+				throw new JMToolkit_Exception(sprintf('Invalid file: Error on row %s',$this->_rows_fetched+1));
+			}
 		}
 		return $return;
 	}
