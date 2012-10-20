@@ -403,7 +403,7 @@ CSV;
 		$parser->setColumnMap(array());
 	}
 
-	/**
+	/** 
 	 * testFileWithNoHeaderRow
 	 *
 	 * @access public
@@ -457,7 +457,7 @@ CSV;
 		$this->assertAttributeEquals($array, '_array', $parser);
 	}
 
-	/**
+	/** 
 	 * testNumbersInHeaders 
 	 * 
 	 * @access public
@@ -465,7 +465,7 @@ CSV;
 	 */
 	public function testNumbersInHeaders()
 	{
-		$parser = $this->getmock('ParserTestHelper', array('_readFileRow'));
+		$parser = $this->getmock('JMToolkit_CSV_Parser', array('_readFileRow'));
 
 		$parser->expects($this->any())
 			->method('_readFileRow')
@@ -482,6 +482,112 @@ CSV;
 		$this->assertEquals('categories.1.name', $array['categories'][1]['name']);
 		$this->assertEquals('categories.0.description', $array['categories'][0]['description']);
 		$this->assertEquals('categories.1.description', $array['categories'][1]['description']);
+	}
+
+	/**
+	 * testReadFileRowCanThrowAnException
+	 *
+	 * @access public
+	 * @return void
+	 * @expectedException JMToolkit_Exception
+	 */
+	public function testReadFileThrowsExceptionWithoutAFileSet()
+	{
+		$parser = $this->getMock('ParserTestHelper', array('_fgetcsv'));
+
+		$parser->testMethod('_readFileRow');
+	}
+
+	/**
+	 * testReadFileReturnsFalseAtEOF
+	 *
+	 * @access public
+	 * @return void
+	 */
+	public function testReadFileReturnsFalseWhenFgetcsvReturnsFalse()
+	{
+		$parser = $this->getMock('ParserTestHelper', array('_openFile', '_fgetcsv'));
+
+		$parser->expects($this->once())
+			->method('_openFile')
+			->will($this->returnValue(uniqid()));
+		$parser->setFile(uniqid());
+
+		$parser->expects($this->once())
+			->method('_fgetcsv')
+			->will($this->returnValue(false));
+
+		$return = $parser->testMethod('_readFileRow');
+
+		$this->assertFalse($return);	
+	}
+
+	public function testReadFileCountsColumns()
+	{	
+		$parser = $this->getMock('ParserTestHelper', array('_openFile', '_fgetcsv'));
+
+		$parser->expects($this->once())
+			->method('_openFile')
+			->will($this->returnValue(uniqid()));
+		$parser->setFile(uniqid());
+
+		$parser->expects($this->once())
+			->method('_fgetcsv')
+			->will($this->returnValue(str_getcsv('one,two,three')));
+
+		$this->assertAttributeEquals(0, '_num_cols', $parser);
+
+		$parser->testMethod('_readFileRow');
+
+		$this->assertAttributeEquals(3, '_num_cols', $parser);
+	}
+
+	/**
+	 * testReadFileTrowsExceptionWhenColumnCountDoesNotMatchPreviousRow
+	 *
+	 * @access public
+	 * @return void
+	 * @expectedException JMToolkit_Exception
+	 */
+	public function testReadFileTrowsExceptionWhenColumnCountDoesNotMatchPreviousRow()
+	{
+		$parser = $this->getMock('ParserTestHelper', array('_openFile', '_fgetcsv'));
+
+		$parser->expects($this->once())
+			->method('_openFile')
+			->will($this->returnValue(uniqid()));
+		$parser->setFile(uniqid());
+
+		$parser->expects($this->any())
+			->method('_fgetcsv')
+			->will($this->returnValue(str_getcsv('one,two,three')));
+
+		$parser->testMethod('_readFileRow');
+
+		$this->assertAttributeEquals(3, '_num_cols', $parser);
+
+		$parser->_num_cols = 2;
+
+		$parser->testMethod('_readFileRow');
+	}
+
+	/**
+	 * testOpeningFileThatDoesNotExist
+	 *
+	 * @access public
+	 * @return void
+	 * @expectedException JMToolkit_Exception
+	 */
+	public function testOpeningFileThatDoesNotExist()
+	{
+		$parser = new JMToolkit_CSV_Parser();
+		$parser->setFile('john_jacob_jingle_himer_shmit');
+	}
+
+	public function testOpeningFileThatDoesExistThrowsNoErrors()
+	{
+		$parser = new JMToolkit_CSV_Parser();
+		$parser->setFile(__FILE__);
 	}
 }
 
@@ -500,5 +606,10 @@ class ParserTestHelper extends JMToolkit_CSV_Parser
 	public function testMethod($name, $args=array())
 	{
 		return call_user_func_array(array($this, $name), $args);
+	}
+
+	public function __set($var, $val)
+	{
+		$this->$var = $val;
 	}
 }
