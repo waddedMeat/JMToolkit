@@ -395,7 +395,7 @@ class JMToolkit_CSV_Parser
 			throw new JMToolkit_Exception('No file has been provided');
 		}
 
-		$return = fgetcsv($this->_file);
+		$return = $this->_fgetcsv($this->_file);
 
 		$size = count($return);
 		
@@ -407,6 +407,11 @@ class JMToolkit_CSV_Parser
 			}
 		}
 		return $return;
+	}
+
+	protected function _fgetcsv($file)
+	{
+		return fgetcsv($file);
 	}
 
 	/**
