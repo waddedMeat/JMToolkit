@@ -1,0 +1,12 @@
+{
+    "name": "jmoran/jm-toolkit",
+    "authors": [
+        {
+            "name": "James Moran",
+            "email": "jmoran@travelclick.com"
+        }
+    ],
+    "require": {
+
+    }
+}
