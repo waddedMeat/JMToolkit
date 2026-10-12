@@ -1,18 +1,18 @@
 <?php
 
-require_once "../CSV/Parser.php";
-require_once "../Exception.php";
+declare(strict_types=1);
 
-$parser = new JMToolkit_CSV_Parser();
-$parser->setFile('example1.csv');
+require __DIR__ . '/../vendor/autoload.php';
 
-while ($array = $parser->getNextArray()) {
-	var_dump($array);
+use JMToolkit\Csv\Parser;
+
+$parser = new Parser(__DIR__ . '/example1.csv');
+
+foreach ($parser as $row) {
+    var_dump($row);
 }
 
-$parser->setFile('example1.csv');
-while ($obj = $parser->getNextObject()) {
-	var_dump($obj);
+$parser->setFile(__DIR__ . '/example1.csv');
+while (($obj = $parser->getNextObject()) !== null) {
+    var_dump($obj);
 }
-
-
