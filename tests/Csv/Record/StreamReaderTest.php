@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace JMToolkit\Tests\Csv\Record;
 
 use JMToolkit\Csv\Record\Dialect;
+use JMToolkit\Csv\Record\SkipBomFilter;
 use JMToolkit\Csv\Record\StreamReader;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
@@ -15,8 +16,11 @@ use PHPUnit\Framework\TestCase;
  * compares the two on the same input.
  */
 #[CoversClass(StreamReader::class)]
+#[CoversClass(SkipBomFilter::class)]
 final class StreamReaderTest extends TestCase
 {
+    private const string BOM = "\xEF\xBB\xBF";
+
     /**
      * @return iterable<string, array{string}>
      */
@@ -79,14 +83,92 @@ final class StreamReaderTest extends TestCase
     #[DataProvider('edgeCases')]
     public function testMatchesFgetcsvOnNonSeekableStream(string $csv): void
     {
-        $pair = stream_socket_pair(STREAM_PF_UNIX, STREAM_SOCK_STREAM, STREAM_IPPROTO_IP);
-        self::assertIsArray($pair);
-        [$reader, $writer] = $pair;
+        [$reader, $writer] = self::socketPair();
         fwrite($writer, $csv);
         fclose($writer);
 
         self::assertFalse(stream_get_meta_data($reader)['seekable']);
         self::assertSame(self::expected($csv), self::readAll(new StreamReader($reader)));
+        fclose($reader);
+    }
+
+    #[DataProvider('edgeCases')]
+    public function testSkipsByteOrderMark(string $csv): void
+    {
+        self::assertSame(self::expected($csv), self::actual(self::BOM . $csv));
+        self::assertSame(self::expected($csv, escape: '\\'), self::actual(self::BOM . $csv, escape: '\\'));
+    }
+
+    #[DataProvider('edgeCases')]
+    public function testSkipsByteOrderMarkOnNonSeekableStream(string $csv): void
+    {
+        [$reader, $writer] = self::socketPair();
+        fwrite($writer, self::BOM . $csv);
+        fclose($writer);
+
+        self::assertSame(self::expected($csv), self::readAll(new StreamReader($reader)));
+        fclose($reader);
+    }
+
+    public function testSkipsByteOrderMarkBeforeEnclosedField(): void
+    {
+        self::assertSame([['id', 'name'], ['1', 'Ann']], self::actual(self::BOM . "\"id\",\"name\"\n1,Ann\n"));
+    }
+
+    /**
+     * @return iterable<string, array{string, string}>
+     */
+    public static function byteOrderMarkLookalikes(): iterable
+    {
+        yield 'only the first of two marks' => [self::BOM . self::BOM . "a\n", self::BOM . "a\n"];
+        yield 'partial mark' => ["\xEF\xBBa\n", "\xEF\xBBa\n"];
+        yield 'partial mark only' => ["\xEF\xBB", "\xEF\xBB"];
+        yield 'mark only' => [self::BOM, ''];
+        yield 'mark after the start' => ["a\n" . self::BOM . "b\n", "a\n" . self::BOM . "b\n"];
+        yield 'empty' => ['', ''];
+    }
+
+    #[DataProvider('byteOrderMarkLookalikes')]
+    public function testOnlySkipsALeadingByteOrderMark(string $csv, string $withoutMark): void
+    {
+        self::assertSame(self::expected($withoutMark), self::actual($csv));
+    }
+
+    #[DataProvider('byteOrderMarkLookalikes')]
+    public function testFilterHandlesMarkSplitAcrossReads(string $csv, string $withoutMark): void
+    {
+        $stream = self::memory($csv);
+        stream_set_chunk_size($stream, 1);
+        if (!in_array(SkipBomFilter::NAME, stream_get_filters(), true)) {
+            stream_filter_register(SkipBomFilter::NAME, SkipBomFilter::class);
+        }
+        stream_filter_append($stream, SkipBomFilter::NAME, STREAM_FILTER_READ);
+
+        self::assertSame($withoutMark, stream_get_contents($stream));
+        fclose($stream);
+    }
+
+    public function testReadsFromCurrentPositionOfStream(): void
+    {
+        $stream = self::memory("skip me\n" . self::BOM . "a,b\n");
+        fgets($stream);
+
+        self::assertSame([['a', 'b']], self::readAll(new StreamReader($stream)));
+        fclose($stream);
+    }
+
+    public function testFilterIsRemovedFromCallersStream(): void
+    {
+        [$reader, $writer] = self::socketPair();
+        fwrite($writer, "a\n" . self::BOM . "b\n");
+        fclose($writer);
+
+        $csv = new StreamReader($reader);
+        self::assertSame(['a'], $csv->read());
+        unset($csv);
+
+        // A mark later in the stream must reach the caller untouched.
+        self::assertSame(self::BOM . "b\n", stream_get_contents($reader));
         fclose($reader);
     }
 
@@ -158,6 +240,17 @@ final class StreamReaderTest extends TestCase
         }
 
         return $records;
+    }
+
+    /**
+     * @return array{resource, resource} a non-seekable reader and its writer
+     */
+    private static function socketPair(): array
+    {
+        $pair = stream_socket_pair(STREAM_PF_UNIX, STREAM_SOCK_STREAM, STREAM_IPPROTO_IP);
+        self::assertIsArray($pair);
+
+        return [$pair[0], $pair[1]];
     }
 
     /**

@@ -165,7 +165,15 @@ final class ParserTest extends TestCase
         self::assertSame(['first', 'last', 'age'], $rows->headers);
     }
 
-    public function testHeaderOnlyFileHasNoRows(): void
+    public function testIgnoresByteOrderMark(): void
+    {
+        $rows = $this->rows("\xEF\xBB\xBF\"user.id\",name\n1,Ann\n");
+
+        self::assertSame(['user.id', 'name'], $rows->headers);
+        self::assertSame(['user' => ['id' => '1'], 'name' => 'Ann'], self::next($rows));
+    }
+
+        public function testHeaderOnlyFileHasNoRows(): void
     {
         $rows = $this->rows(self::HEADER . "\n");
 

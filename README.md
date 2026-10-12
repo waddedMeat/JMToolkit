@@ -48,8 +48,12 @@ numbers, and breaking out of a loop and iterating again continues with the
 next row. `$rows->headers` holds the header row as it appears in the file,
 and `$rows->rowsFetched` the number of rows returned so far.
 
-`parseStream()` reads from an already open stream such as `php://stdin`;
-the caller remains responsible for closing it.
+`parseStream()` reads from an already open stream such as `php://stdin`,
+starting at its current position; the caller remains responsible for
+closing it.
+
+A UTF-8 byte-order mark at the start of the input, as written by Excel and
+other Windows tools, is skipped so it never ends up in the first header.
 
 Numeric path segments (`categories.0.name`, `categories.1.name`) produce
 numerically indexed arrays. With `RowFormat::Object`, associative arrays

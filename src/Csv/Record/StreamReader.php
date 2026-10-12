@@ -33,9 +33,13 @@ final class StreamReader implements RecordReader
     /** Whether the stream was opened by open() and must be closed by this reader. */
     private bool $ownsStream = false;
 
+    /** @var resource|null The byte-order mark filter attached to a non-seekable stream. */
+    private $bomFilter = null;
+
     /**
-     * Reads from an already open stream. The caller remains responsible for
-     * closing it.
+     * Reads from an already open stream, starting at its current position. A
+     * UTF-8 byte-order mark at that position is skipped. The caller remains
+     * responsible for closing the stream.
      *
      * @param resource $stream
      */
@@ -49,11 +53,14 @@ final class StreamReader implements RecordReader
         $this->enclosure = $enclosure = $dialect->enclosure;
         $this->escape = $dialect->escape;
 
+        $seekable = stream_get_meta_data($stream)['seekable'];
+        $this->skipBom($seekable);
+
         $fastPath = $this->escape === ''
             && $delimiter !== $enclosure
             && !str_contains("\r\n", $delimiter)
             && !str_contains("\r\n", $enclosure)
-            && stream_get_meta_data($stream)['seekable'];
+            && $seekable;
 
         if ($fastPath) {
             $d = preg_quote($delimiter, '/');
@@ -64,6 +71,31 @@ final class StreamReader implements RecordReader
         } else {
             $this->pattern = null;
         }
+    }
+
+    /**
+     * Drops a UTF-8 byte-order mark (as written by Excel and other Windows
+     * tools) so it does not end up in the first header. It has to go before
+     * tokenizing: "\xEF\xBB\xBF\"id\"" would otherwise make fgetcsv() treat
+     * the enclosure characters of the first field as literal text.
+     *
+     */
+    private function skipBom(bool $seekable): void
+    {
+        if ($seekable) {
+            $start = ftell($this->stream);
+            if ($start !== false && fread($this->stream, strlen(SkipBomFilter::BOM)) !== SkipBomFilter::BOM) {
+                fseek($this->stream, $start);
+            }
+
+            return;
+        }
+
+        if (!in_array(SkipBomFilter::NAME, stream_get_filters(), true)) {
+            stream_filter_register(SkipBomFilter::NAME, SkipBomFilter::class);
+        }
+        $filter = stream_filter_append($this->stream, SkipBomFilter::NAME, STREAM_FILTER_READ);
+        $this->bomFilter = $filter === false ? null : $filter;
     }
 
     /**
@@ -89,8 +121,15 @@ final class StreamReader implements RecordReader
 
     public function __destruct()
     {
-        if ($this->ownsStream && is_resource($this->stream)) {
+        if (!is_resource($this->stream)) {
+            return;
+        }
+
+        if ($this->ownsStream) {
             fclose($this->stream);
+        } elseif ($this->bomFilter !== null) {
+            // Hand the caller's stream back as it was given.
+            stream_filter_remove($this->bomFilter);
         }
     }
 
