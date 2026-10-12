@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace JMToolkit\Tests\Csv\Column;
 
+use JMToolkit\Csv\Column\AllOf;
 use JMToolkit\Csv\Column\Blacklist;
 use JMToolkit\Csv\Column\ColumnMap;
 use JMToolkit\Csv\Column\ColumnSelection;
@@ -12,6 +13,7 @@ use JMToolkit\Exception;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 
+#[CoversClass(AllOf::class)]
 #[CoversClass(ColumnMap::class)]
 #[CoversClass(Whitelist::class)]
 #[CoversClass(Blacklist::class)]
@@ -64,12 +66,21 @@ final class ColumnTest extends TestCase
         self::assertTrue(new Blacklist()->accepts('a'));
     }
 
+    public function testAllOfAcceptsOnlyWhatEveryFilterAccepts(): void
+    {
+        $filter = new AllOf(new Whitelist('a', 'b'), new Blacklist('b'));
+
+        self::assertTrue($filter->accepts('a'));
+        self::assertFalse($filter->accepts('b'));
+        self::assertFalse($filter->accepts('c'));
+        self::assertTrue(new AllOf()->accepts('anything'));
+    }
+
     public function testSelectionMapsThenFilters(): void
     {
         $selection = new ColumnSelection(
             new ColumnMap()->rename('first', 'name.first')->rename('pw', 'secret'),
-            new Whitelist('name.first', 'secret', 'age'),
-            new Blacklist('secret'),
+            new AllOf(new Whitelist('name.first', 'secret', 'age'), new Blacklist('secret')),
         );
 
         self::assertSame([0 => 'name.first', 3 => 'age'], $selection->resolve(['first', 'last', 'pw', 'age']));

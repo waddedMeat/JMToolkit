@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace JMToolkit\Tests\Csv;
 
+use JMToolkit\Csv\Column\AllOf;
 use JMToolkit\Csv\Column\Blacklist;
+use JMToolkit\Csv\Column\ColumnFilter;
 use JMToolkit\Csv\Column\ColumnMap;
 use JMToolkit\Csv\Column\Whitelist;
 use JMToolkit\Csv\Parser;
@@ -140,7 +142,7 @@ final class ParserTest extends TestCase
 
     public function testOneParserReadsSeveralFilesIndependently(): void
     {
-        $parser = new Parser(whitelist: new Whitelist('a'));
+        $parser = new Parser(filter: new Whitelist('a'));
         $narrow = $this->rows("a,b\n1,2\n3,4\n", $parser);
         $wide = $this->rows("a,b,c\n5,6,7\n", $parser);
 
@@ -155,7 +157,7 @@ final class ParserTest extends TestCase
     {
         $rows = $this->rows(
             "first,last,age\nJames,Moran,37\n",
-            new Parser(columnMap: new ColumnMap()->rename('first', 'name.first'), blacklist: new Blacklist('age')),
+            new Parser(columnMap: new ColumnMap()->rename('first', 'name.first'), filter: new Blacklist('age')),
         );
 
         self::assertSame(['first', 'last', 'age'], $rows->headers);
@@ -231,14 +233,14 @@ final class ParserTest extends TestCase
 
     public function testBlacklist(): void
     {
-        $row = self::next($this->rows(self::USERS, new Parser(blacklist: new Blacklist('user.name.last', 'user.sex'))));
+        $row = self::next($this->rows(self::USERS, new Parser(filter: new Blacklist('user.name.last', 'user.sex'))));
 
         self::assertSame(['user' => ['name' => ['first' => 'James'], 'age' => '37']], $row);
     }
 
     public function testWhitelist(): void
     {
-        $row = self::next($this->rows(self::USERS, new Parser(whitelist: new Whitelist('user.name.last', 'user.sex'))));
+        $row = self::next($this->rows(self::USERS, new Parser(filter: new Whitelist('user.name.last', 'user.sex'))));
 
         self::assertSame(['user' => ['name' => ['last' => 'Moran'], 'sex' => 'M']], $row);
     }
@@ -247,17 +249,31 @@ final class ParserTest extends TestCase
     {
         $row = self::next($this->rows(
             self::USERS,
-            new Parser(whitelist: new Whitelist('user.name.last', 'user.sex'), blacklist: new Blacklist('user.sex')),
+            new Parser(filter: new AllOf(new Whitelist('user.name.last', 'user.sex'), new Blacklist('user.sex'))),
         ));
 
         self::assertSame(['user' => ['name' => ['last' => 'Moran']]], $row);
+    }
+
+    public function testCustomFilter(): void
+    {
+        $startsWithUserName = new class implements ColumnFilter {
+            public function accepts(string $name): bool
+            {
+                return str_starts_with($name, 'user.name.');
+            }
+        };
+
+        $row = self::next($this->rows(self::USERS, new Parser(filter: $startsWithUserName)));
+
+        self::assertSame(['user' => ['name' => ['first' => 'James', 'last' => 'Moran']]], $row);
     }
 
     public function testListsMatchMappedNames(): void
     {
         $row = self::next($this->rows(
             "first,last\nJames,Moran\n",
-            new Parser(columnMap: new ColumnMap()->rename('first', 'name.first'), whitelist: new Whitelist('name.first')),
+            new Parser(columnMap: new ColumnMap()->rename('first', 'name.first'), filter: new Whitelist('name.first')),
         ));
 
         self::assertSame(['name' => ['first' => 'James']], $row);

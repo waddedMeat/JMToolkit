@@ -4,10 +4,9 @@ declare(strict_types=1);
 
 namespace JMToolkit\Csv;
 
-use JMToolkit\Csv\Column\Blacklist;
+use JMToolkit\Csv\Column\ColumnFilter;
 use JMToolkit\Csv\Column\ColumnMap;
 use JMToolkit\Csv\Column\ColumnSelection;
-use JMToolkit\Csv\Column\Whitelist;
 use JMToolkit\Csv\Record\Dialect;
 use JMToolkit\Csv\Record\StreamReader;
 use JMToolkit\Csv\Record\ValidatingReader;
@@ -45,23 +44,22 @@ final readonly class Parser
 
     /**
      * @param ColumnMap $columnMap renames header columns before they are split into key paths
-     * @param Whitelist|null $whitelist only these columns are used (matched after mapping)
-     * @param Blacklist|null $blacklist these columns are skipped (matched after mapping)
+     * @param ColumnFilter|null $filter decides which columns are used, matched after mapping
+     *                                  (e.g. Whitelist, Blacklist, or several combined with AllOf)
      * @param non-empty-string $delimiter
      * @param non-empty-string $enclosure
      * @param string $escape a single character, or "" for RFC 4180 (enclosures escaped by doubling them)
      */
     public function __construct(
         ColumnMap $columnMap = new ColumnMap(),
-        ?Whitelist $whitelist = null,
-        ?Blacklist $blacklist = null,
+        ?ColumnFilter $filter = null,
         string $delimiter = ',',
         string $enclosure = '"',
         string $escape = '',
         private RowFormat $rowFormat = RowFormat::Array,
     ) {
         $this->dialect = new Dialect($delimiter, $enclosure, $escape);
-        $this->columns = new ColumnSelection($columnMap, ...array_filter([$whitelist, $blacklist]));
+        $this->columns = new ColumnSelection($columnMap, $filter);
     }
 
     /**

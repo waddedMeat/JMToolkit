@@ -11,18 +11,14 @@ namespace JMToolkit\Csv\Column;
  */
 final readonly class ColumnSelection
 {
-    /** @var list<ColumnFilter> */
-    private array $filters;
-
     public function __construct(
         private ColumnMap $map = new ColumnMap(),
-        ColumnFilter ...$filters,
+        private ?ColumnFilter $filter = null,
     ) {
-        $this->filters = array_values($filters);
     }
 
     /**
-     * Applies the map, then every filter, to a header row.
+     * Applies the map, then the filter, to a header row.
      *
      * @param list<string|null> $headers
      *
@@ -34,13 +30,9 @@ final readonly class ColumnSelection
         foreach ($headers as $position => $header) {
             $name = $this->map->nameOf((string) $header);
 
-            foreach ($this->filters as $filter) {
-                if (!$filter->accepts($name)) {
-                    continue 2;
-                }
+            if ($this->filter === null || $this->filter->accepts($name)) {
+                $columns[$position] = $name;
             }
-
-            $columns[$position] = $name;
         }
 
         return $columns;

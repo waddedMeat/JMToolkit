@@ -5,7 +5,9 @@ declare(strict_types=1);
 namespace JMToolkit\Csv\Column;
 
 /**
- * Decides whether a column is used. Implemented by Whitelist and Blacklist.
+ * Decides whether a column is used. Pass one to Parser's filter argument;
+ * combine several with AllOf. Implement it to select columns by your own
+ * rules, e.g. by pattern.
  */
 interface ColumnFilter
 {

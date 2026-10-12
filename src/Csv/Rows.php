@@ -25,9 +25,9 @@ final class Rows implements \IteratorAggregate
     public private(set) int $rowsFetched = 0;
 
     /**
-     * The header row as it appears in the file, before any column map,
-     * whitelist or blacklist is applied. Reading it reads the header row
-     * from the file if iteration has not started yet.
+     * The header row as it appears in the file, before the column map or
+     * filter is applied. Reading it reads the header row from the file if
+     * iteration has not started yet.
      *
      * @var list<string>
      */

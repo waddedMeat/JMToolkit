@@ -63,8 +63,7 @@ All options are named constructor arguments:
 |-------------|---------------------------------------------------------------------------------|
 | `rowFormat` | `RowFormat::Array` (default) or `RowFormat::Object`.                            |
 | `columnMap` | A `ColumnMap` that renames header columns before they are nested.               |
-| `whitelist` | A `Whitelist`: only these columns are used (matched after mapping).             |
-| `blacklist` | A `Blacklist`: these columns are skipped (matched after mapping).               |
+| `filter`    | A `ColumnFilter` that decides which columns are used (matched after mapping).   |
 | `delimiter` | Field delimiter, default `,`.                                                   |
 | `enclosure` | Field enclosure, default `"`.                                                   |
 | `escape`    | Escape character, default `""` (RFC 4180: quotes are escaped by doubling them). |
@@ -72,20 +71,52 @@ All options are named constructor arguments:
 ```php
 use JMToolkit\Csv\Column\Blacklist;
 use JMToolkit\Csv\Column\ColumnMap;
-use JMToolkit\Csv\Column\Whitelist;
 
 $parser = new Parser(
     columnMap: new ColumnMap()
         ->rename('firstname', 'user.name.first')
         ->rename('lastname', 'user.name.last'),
-    whitelist: new Whitelist('user.name.first', 'user.name.last', 'user.password'),
-    blacklist: new Blacklist('user.password'),
+    filter: new Blacklist('user.password'),
     delimiter: ';',
 );
 ```
 
 `ColumnMap::rename()` returns a new map, so a map can be shared and extended
 safely; renaming the same column twice throws.
+
+### Choosing columns
+
+`Whitelist` keeps only the listed columns, `Blacklist` skips the listed
+columns, and `AllOf` combines filters so a column is used only if every one
+accepts it:
+
+```php
+use JMToolkit\Csv\Column\AllOf;
+use JMToolkit\Csv\Column\Whitelist;
+
+new Parser(filter: new AllOf(
+    new Whitelist('user.name', 'user.email', 'user.password'),
+    new Blacklist('user.password'),
+));
+```
+
+To select columns by your own rules, implement `ColumnFilter`:
+
+```php
+use JMToolkit\Csv\Column\ColumnFilter;
+
+final readonly class PatternFilter implements ColumnFilter
+{
+    public function __construct(private string $pattern) {}
+
+    public function accepts(string $name): bool
+    {
+        return preg_match($this->pattern, $name) === 1;
+    }
+}
+
+new Parser(filter: new PatternFilter('/^user\./'));
+```
 
 All errors (missing file, missing header row, rows with the wrong number of
 columns, conflicting column names, invalid characters) throw
@@ -116,7 +147,7 @@ each concern lives in its own internal class:
 | `Csv\Record\Dialect`             | Delimiter, enclosure and escape characters (validated).                |
 | `Csv\Record\StreamReader`        | Tokenizes records from a stream, closing files it opened itself.       |
 | `Csv\Record\ValidatingReader`    | Skips blank lines and enforces a consistent number of columns.         |
-| `Csv\Column\ColumnSelection`     | Applies the `ColumnMap`, then each `ColumnFilter` (`Whitelist`, `Blacklist`), to the header. |
+| `Csv\Column\ColumnSelection`     | Applies the `ColumnMap`, then the `ColumnFilter`, to the header.        |
 | `Csv\Row\Schema`                 | Compiles the header into the nested shape of a row, rejecting clashes. |
 | `Csv\Row\ArrayHydrator`, `ObjectHydrator` | Fill that shape from a record, one per `RowFormat`.          |
 
@@ -129,9 +160,9 @@ Readers implement `RecordReader` and hydrators implement `RowHydrator`, so
   is now `JMToolkit\Csv\Parser`, and `JMToolkit_Exception` is now
   `JMToolkit\Exception`. The old names are no longer available.
 - `Parser` only holds configuration, passed as named constructor arguments
-  instead of an options array; the setters are gone. The column map,
-  whitelist and blacklist are `ColumnMap`, `Whitelist` and `Blacklist`
-  objects instead of arrays.
+  instead of an options array; the setters are gone. The column map is a
+  `ColumnMap` object, and the whitelist and blacklist are `Whitelist` and
+  `Blacklist` objects passed as `filter` (combine them with `AllOf`).
 - `setFile()`, `getNextArray()` and `getNextObject()` are replaced by
   iterating over `$parser->parseFile($path)` (or `parseStream()`) with
   `foreach`. The `rowFormat` argument chooses between arrays and objects.
