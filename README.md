@@ -62,20 +62,30 @@ All options are named constructor arguments:
 | Argument    | Description                                                                     |
 |-------------|---------------------------------------------------------------------------------|
 | `rowFormat` | `RowFormat::Array` (default) or `RowFormat::Object`.                            |
-| `columnMap` | Renames header columns, e.g. `['firstname' => 'user.name.first']`.              |
-| `whitelist` | Only these columns are used (matched after mapping).                            |
-| `blacklist` | These columns are skipped (matched after mapping).                              |
+| `columnMap` | A `ColumnMap` that renames header columns before they are nested.               |
+| `whitelist` | A `Whitelist`: only these columns are used (matched after mapping).             |
+| `blacklist` | A `Blacklist`: these columns are skipped (matched after mapping).               |
 | `delimiter` | Field delimiter, default `,`.                                                   |
 | `enclosure` | Field enclosure, default `"`.                                                   |
 | `escape`    | Escape character, default `""` (RFC 4180: quotes are escaped by doubling them). |
 
 ```php
+use JMToolkit\Csv\Column\Blacklist;
+use JMToolkit\Csv\Column\ColumnMap;
+use JMToolkit\Csv\Column\Whitelist;
+
 $parser = new Parser(
-    columnMap: ['firstname' => 'user.name.first'],
-    blacklist: ['user.password'],
+    columnMap: new ColumnMap()
+        ->rename('firstname', 'user.name.first')
+        ->rename('lastname', 'user.name.last'),
+    whitelist: new Whitelist('user.name.first', 'user.name.last', 'user.password'),
+    blacklist: new Blacklist('user.password'),
     delimiter: ';',
 );
 ```
+
+`ColumnMap::rename()` returns a new map, so a map can be shared and extended
+safely; renaming the same column twice throws.
 
 All errors (missing file, missing header row, rows with the wrong number of
 columns, conflicting column names, invalid characters) throw
@@ -106,7 +116,7 @@ each concern lives in its own internal class:
 | `Csv\Record\Dialect`             | Delimiter, enclosure and escape characters (validated).                |
 | `Csv\Record\StreamReader`        | Tokenizes records from a stream, closing files it opened itself.       |
 | `Csv\Record\ValidatingReader`    | Skips blank lines and enforces a consistent number of columns.         |
-| `Csv\Row\ColumnSelection`        | Applies the column map, whitelist and blacklist to the header.         |
+| `Csv\Column\ColumnSelection`     | Applies the `ColumnMap`, then each `ColumnFilter` (`Whitelist`, `Blacklist`), to the header. |
 | `Csv\Row\Schema`                 | Compiles the header into the nested shape of a row, rejecting clashes. |
 | `Csv\Row\ArrayHydrator`, `ObjectHydrator` | Fill that shape from a record, one per `RowFormat`.          |
 
@@ -119,7 +129,9 @@ Readers implement `RecordReader` and hydrators implement `RowHydrator`, so
   is now `JMToolkit\Csv\Parser`, and `JMToolkit_Exception` is now
   `JMToolkit\Exception`. The old names are no longer available.
 - `Parser` only holds configuration, passed as named constructor arguments
-  instead of an options array; the setters are gone.
+  instead of an options array; the setters are gone. The column map,
+  whitelist and blacklist are `ColumnMap`, `Whitelist` and `Blacklist`
+  objects instead of arrays.
 - `setFile()`, `getNextArray()` and `getNextObject()` are replaced by
   iterating over `$parser->parseFile($path)` (or `parseStream()`) with
   `foreach`. The `rowFormat` argument chooses between arrays and objects.

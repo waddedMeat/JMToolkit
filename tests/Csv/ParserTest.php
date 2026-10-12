@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace JMToolkit\Tests\Csv;
 
+use JMToolkit\Csv\Column\Blacklist;
+use JMToolkit\Csv\Column\ColumnMap;
+use JMToolkit\Csv\Column\Whitelist;
 use JMToolkit\Csv\Parser;
 use JMToolkit\Csv\RowFormat;
 use JMToolkit\Csv\Rows;
@@ -137,7 +140,7 @@ final class ParserTest extends TestCase
 
     public function testOneParserReadsSeveralFilesIndependently(): void
     {
-        $parser = new Parser(whitelist: ['a']);
+        $parser = new Parser(whitelist: new Whitelist('a'));
         $narrow = $this->rows("a,b\n1,2\n3,4\n", $parser);
         $wide = $this->rows("a,b,c\n5,6,7\n", $parser);
 
@@ -152,7 +155,7 @@ final class ParserTest extends TestCase
     {
         $rows = $this->rows(
             "first,last,age\nJames,Moran,37\n",
-            new Parser(columnMap: ['first' => 'name.first'], blacklist: ['age']),
+            new Parser(columnMap: new ColumnMap()->rename('first', 'name.first'), blacklist: new Blacklist('age')),
         );
 
         self::assertSame(['first', 'last', 'age'], $rows->headers);
@@ -212,7 +215,12 @@ final class ParserTest extends TestCase
     {
         $row = self::next($this->rows(
             "firstname,lastname,age,user.sex\nJames,Moran,37,M\n",
-            new Parser(columnMap: ['firstname' => 'user.name.first', 'lastname' => 'user.name.last', 'age' => 'user.age']),
+            new Parser(
+                columnMap: new ColumnMap()
+                    ->rename('firstname', 'user.name.first')
+                    ->rename('lastname', 'user.name.last')
+                    ->rename('age', 'user.age'),
+            ),
         ));
 
         self::assertSame(
@@ -223,14 +231,14 @@ final class ParserTest extends TestCase
 
     public function testBlacklist(): void
     {
-        $row = self::next($this->rows(self::USERS, new Parser(blacklist: ['user.name.last', 'user.sex'])));
+        $row = self::next($this->rows(self::USERS, new Parser(blacklist: new Blacklist('user.name.last', 'user.sex'))));
 
         self::assertSame(['user' => ['name' => ['first' => 'James'], 'age' => '37']], $row);
     }
 
     public function testWhitelist(): void
     {
-        $row = self::next($this->rows(self::USERS, new Parser(whitelist: ['user.name.last', 'user.sex'])));
+        $row = self::next($this->rows(self::USERS, new Parser(whitelist: new Whitelist('user.name.last', 'user.sex'))));
 
         self::assertSame(['user' => ['name' => ['last' => 'Moran'], 'sex' => 'M']], $row);
     }
@@ -239,7 +247,7 @@ final class ParserTest extends TestCase
     {
         $row = self::next($this->rows(
             self::USERS,
-            new Parser(whitelist: ['user.name.last', 'user.sex'], blacklist: ['user.sex']),
+            new Parser(whitelist: new Whitelist('user.name.last', 'user.sex'), blacklist: new Blacklist('user.sex')),
         ));
 
         self::assertSame(['user' => ['name' => ['last' => 'Moran']]], $row);
@@ -249,7 +257,7 @@ final class ParserTest extends TestCase
     {
         $row = self::next($this->rows(
             "first,last\nJames,Moran\n",
-            new Parser(columnMap: ['first' => 'name.first'], whitelist: ['name.first']),
+            new Parser(columnMap: new ColumnMap()->rename('first', 'name.first'), whitelist: new Whitelist('name.first')),
         ));
 
         self::assertSame(['name' => ['first' => 'James']], $row);

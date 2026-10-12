@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace JMToolkit\Csv;
 
+use JMToolkit\Csv\Column\ColumnSelection;
 use JMToolkit\Csv\Record\RecordReader;
-use JMToolkit\Csv\Row\ColumnSelection;
 use JMToolkit\Csv\Row\RowHydrator;
 use JMToolkit\Csv\Row\Schema;
 use JMToolkit\Exception;
