@@ -5,18 +5,20 @@ declare(strict_types=1);
 namespace JMToolkit\Tests\Csv\Column;
 
 use JMToolkit\Csv\Column\AllOf;
-use JMToolkit\Csv\Column\Blacklist;
+use JMToolkit\Csv\Column\Denylist;
+use JMToolkit\Csv\Column\PatternFilter;
 use JMToolkit\Csv\Column\ColumnMap;
 use JMToolkit\Csv\Column\ColumnSelection;
-use JMToolkit\Csv\Column\Whitelist;
+use JMToolkit\Csv\Column\Allowlist;
 use JMToolkit\Exception;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 
 #[CoversClass(AllOf::class)]
 #[CoversClass(ColumnMap::class)]
-#[CoversClass(Whitelist::class)]
-#[CoversClass(Blacklist::class)]
+#[CoversClass(Allowlist::class)]
+#[CoversClass(Denylist::class)]
+#[CoversClass(PatternFilter::class)]
 #[CoversClass(ColumnSelection::class)]
 final class ColumnTest extends TestCase
 {
@@ -46,29 +48,59 @@ final class ColumnTest extends TestCase
         new ColumnMap()->rename('a', 'b')->rename('a', 'c');
     }
 
-    public function testWhitelist(): void
+    public function testAllowlist(): void
     {
-        $list = new Whitelist('a', '0');
+        $list = new Allowlist('a', '0');
 
         self::assertTrue($list->accepts('a'));
         self::assertTrue($list->accepts('0'));
         self::assertFalse($list->accepts('b'));
-        self::assertFalse(new Whitelist()->accepts('a'));
+        self::assertFalse(new Allowlist()->accepts('a'));
     }
 
-    public function testBlacklist(): void
+    public function testDenylist(): void
     {
-        $list = new Blacklist('a', '0');
+        $list = new Denylist('a', '0');
 
         self::assertFalse($list->accepts('a'));
         self::assertFalse($list->accepts('0'));
         self::assertTrue($list->accepts('b'));
-        self::assertTrue(new Blacklist()->accepts('a'));
+        self::assertTrue(new Denylist()->accepts('a'));
+    }
+
+    public function testPatternFilter(): void
+    {
+        $filter = new PatternFilter('/^user\./');
+
+        self::assertTrue($filter->accepts('user.name'));
+        self::assertTrue($filter->accepts('user.email.work'));
+        self::assertFalse($filter->accepts('user'));
+        self::assertFalse($filter->accepts('admin.user.name'));
+    }
+
+    public function testPatternFilterSupportsModifiers(): void
+    {
+        self::assertTrue(new PatternFilter('/^USER\./i')->accepts('user.name'));
+        self::assertTrue(new PatternFilter('/^é/u')->accepts('été'));
+    }
+
+    public function testInvalidPatternThrows(): void
+    {
+        $this->expectException(Exception::class);
+        $this->expectExceptionMessage('Invalid pattern "/(unclosed/": Compilation failed: missing closing parenthesis');
+        new PatternFilter('/(unclosed/');
+    }
+
+    public function testPatternWithoutDelimitersThrows(): void
+    {
+        $this->expectException(Exception::class);
+        $this->expectExceptionMessage('Invalid pattern "user"');
+        new PatternFilter('user');
     }
 
     public function testAllOfAcceptsOnlyWhatEveryFilterAccepts(): void
     {
-        $filter = new AllOf(new Whitelist('a', 'b'), new Blacklist('b'));
+        $filter = new AllOf(new Allowlist('a', 'b'), new Denylist('b'));
 
         self::assertTrue($filter->accepts('a'));
         self::assertFalse($filter->accepts('b'));
@@ -80,7 +112,7 @@ final class ColumnTest extends TestCase
     {
         $selection = new ColumnSelection(
             new ColumnMap()->rename('first', 'name.first')->rename('pw', 'secret'),
-            new AllOf(new Whitelist('name.first', 'secret', 'age'), new Blacklist('secret')),
+            new AllOf(new Allowlist('name.first', 'secret', 'age'), new Denylist('secret')),
         );
 
         self::assertSame([0 => 'name.first', 3 => 'age'], $selection->resolve(['first', 'last', 'pw', 'age']));

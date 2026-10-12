@@ -45,7 +45,7 @@ final readonly class Parser
     /**
      * @param ColumnMap $columnMap renames header columns before they are split into key paths
      * @param ColumnFilter|null $filter decides which columns are used, matched after mapping
-     *                                  (e.g. Whitelist, Blacklist, or several combined with AllOf)
+     *                                  (e.g. Allowlist, Denylist, or several combined with AllOf)
      * @param non-empty-string $delimiter
      * @param non-empty-string $enclosure
      * @param string $escape a single character, or "" for RFC 4180 (enclosures escaped by doubling them)

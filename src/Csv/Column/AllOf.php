@@ -8,7 +8,7 @@ namespace JMToolkit\Csv\Column;
  * Combines filters: a column is used only if every filter accepts it.
  *
  * <code>
- * new AllOf(new Whitelist('user.name', 'user.password'), new Blacklist('user.password'))
+ * new AllOf(new Allowlist('user.name', 'user.password'), new Denylist('user.password'))
  * </code>
  */
 final readonly class AllOf implements ColumnFilter

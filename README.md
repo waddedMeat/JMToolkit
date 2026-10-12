@@ -69,14 +69,14 @@ All options are named constructor arguments:
 | `escape`    | Escape character, default `""` (RFC 4180: quotes are escaped by doubling them). |
 
 ```php
-use JMToolkit\Csv\Column\Blacklist;
+use JMToolkit\Csv\Column\Denylist;
 use JMToolkit\Csv\Column\ColumnMap;
 
 $parser = new Parser(
     columnMap: new ColumnMap()
         ->rename('firstname', 'user.name.first')
         ->rename('lastname', 'user.name.last'),
-    filter: new Blacklist('user.password'),
+    filter: new Denylist('user.password'),
     delimiter: ';',
 );
 ```
@@ -86,40 +86,49 @@ safely; renaming the same column twice throws.
 
 ### Choosing columns
 
-`Whitelist` keeps only the listed columns, `Blacklist` skips the listed
-columns, and `AllOf` combines filters so a column is used only if every one
-accepts it:
+Pass one of these as `filter` (names are matched after the column map is
+applied):
+
+| Filter                               | Uses                                                   |
+|--------------------------------------|--------------------------------------------------------|
+| `new Allowlist('a', 'b')`            | only the listed columns                                |
+| `new Denylist('a', 'b')`             | every column except the listed ones                    |
+| `new PatternFilter('/^user\./')`     | only columns whose name matches the regular expression |
+| `new AllOf($filter, ...)`            | only columns that every given filter accepts           |
 
 ```php
 use JMToolkit\Csv\Column\AllOf;
-use JMToolkit\Csv\Column\Whitelist;
+use JMToolkit\Csv\Column\PatternFilter;
 
+// Every user.* column except the password.
 new Parser(filter: new AllOf(
-    new Whitelist('user.name', 'user.email', 'user.password'),
-    new Blacklist('user.password'),
+    new PatternFilter('/^user\./'),
+    new Denylist('user.password'),
 ));
 ```
+
+An invalid pattern throws `JMToolkit\Exception` when the `PatternFilter` is
+created.
 
 To select columns by your own rules, implement `ColumnFilter`:
 
 ```php
 use JMToolkit\Csv\Column\ColumnFilter;
 
-final readonly class PatternFilter implements ColumnFilter
+/** Skips columns at any level whose name starts with an underscore. */
+final readonly class SkipPrivate implements ColumnFilter
 {
-    public function __construct(private string $pattern) {}
-
     public function accepts(string $name): bool
     {
-        return preg_match($this->pattern, $name) === 1;
+        return !str_starts_with($name, '_') && !str_contains($name, '._');
     }
 }
 
-new Parser(filter: new PatternFilter('/^user\./'));
+new Parser(filter: new SkipPrivate());
 ```
 
 All errors (missing file, missing header row, rows with the wrong number of
-columns, conflicting column names, invalid characters) throw
+columns, conflicting column names, invalid characters or patterns) throw
 `JMToolkit\Exception`.
 
 ## Performance
@@ -161,8 +170,9 @@ Readers implement `RecordReader` and hydrators implement `RowHydrator`, so
   `JMToolkit\Exception`. The old names are no longer available.
 - `Parser` only holds configuration, passed as named constructor arguments
   instead of an options array; the setters are gone. The column map is a
-  `ColumnMap` object, and the whitelist and blacklist are `Whitelist` and
-  `Blacklist` objects passed as `filter` (combine them with `AllOf`).
+  `ColumnMap` object. `setWhitelist()` and `setBlacklist()` are replaced by
+  `Allowlist` and `Denylist` objects passed as `filter` (combine them with
+  `AllOf`).
 - `setFile()`, `getNextArray()` and `getNextObject()` are replaced by
   iterating over `$parser->parseFile($path)` (or `parseStream()`) with
   `foreach`. The `rowFormat` argument chooses between arrays and objects.

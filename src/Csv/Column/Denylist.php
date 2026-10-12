@@ -5,14 +5,14 @@ declare(strict_types=1);
 namespace JMToolkit\Csv\Column;
 
 /**
- * Only the listed columns are used. Names are matched after the column map
- * is applied.
+ * The listed columns are skipped. Names are matched after the column map is
+ * applied.
  *
  * <code>
- * new Whitelist('user.name.first', 'user.age')
+ * new Denylist('user.password')
  * </code>
  */
-final readonly class Whitelist implements ColumnFilter
+final readonly class Denylist implements ColumnFilter
 {
     /** @var array<string, true> */
     private array $names;
@@ -25,6 +25,6 @@ final readonly class Whitelist implements ColumnFilter
     #[\Override]
     public function accepts(string $name): bool
     {
-        return isset($this->names[$name]);
+        return !isset($this->names[$name]);
     }
 }
