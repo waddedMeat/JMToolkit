@@ -43,7 +43,7 @@ memory_reset_peak_usage();
 
 $start = hrtime(true);
 $count = 0;
-foreach (new Parser($path, ['row_format' => $format]) as $row) {
+foreach (new Parser(rowFormat: $format)->parseFile($path) as $row) {
     $count++;
 }
 $elapsed = (hrtime(true) - $start) / 1e9;

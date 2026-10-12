@@ -22,23 +22,34 @@ composer require jmoran/jm-toolkit
 
 ## Usage
 
+A `Parser` holds the configuration. Each call to `parseFile()` or
+`parseStream()` returns an independent `Rows` that you iterate over:
+
 ```php
 use JMToolkit\Csv\Parser;
 use JMToolkit\Csv\RowFormat;
 
-foreach (new Parser('users.csv') as $row) {
+$parser = new Parser();
+
+foreach ($parser->parseFile('users.csv') as $row) {
     echo $row['user']['name']['first'], PHP_EOL;
 }
 
 // Rows can be returned as objects instead of arrays.
-$parser = new Parser('users.csv', ['row_format' => RowFormat::Object]);
-foreach ($parser as $user) {
+$parser = new Parser(rowFormat: RowFormat::Object);
+
+foreach ($parser->parseFile('users.csv') as $user) {
     echo $user->user->name->first, PHP_EOL;
 }
 ```
 
-Keys are 0-based row numbers. Breaking out of a loop and iterating again
-continues with the next row.
+`Rows` reads the file forward, one row at a time. Keys are 0-based row
+numbers, and breaking out of a loop and iterating again continues with the
+next row. `$rows->headers` holds the header row as it appears in the file,
+and `$rows->rowsFetched` the number of rows returned so far.
+
+`parseStream()` reads from an already open stream such as `php://stdin`;
+the caller remains responsible for closing it.
 
 Numeric path segments (`categories.0.name`, `categories.1.name`) produce
 numerically indexed arrays. With `RowFormat::Object`, associative arrays
@@ -46,33 +57,28 @@ become `stdClass` objects and such lists stay arrays.
 
 ### Options
 
-Options can be passed to the constructor or set with the fluent setters.
-The column options (`column_map`, `whitelist`, `blacklist`) must be set before
-the first row is read; `row_format` can be changed at any time.
+All options are named constructor arguments:
 
-| Option       | Setter            | Description                                                         |
-|--------------|-------------------|---------------------------------------------------------------------|
-| `row_format` | `setRowFormat()`  | `RowFormat::Array` (default) or `RowFormat::Object`.               |
-| `column_map` | `setColumnMap()`  | Renames header columns, e.g. `['firstname' => 'user.name.first']`. |
-| `whitelist`  | `setWhitelist()`  | Only these columns are used (matched after mapping).                |
-| `blacklist`  | `setBlacklist()`  | These columns are skipped (matched after mapping).                  |
-| `delimiter`  |                   | Field delimiter, default `,`.                                       |
-| `enclosure`  |                   | Field enclosure, default `"`.                                       |
-| `escape`     |                   | Escape character, default `""` (RFC 4180: quotes are escaped by doubling them). |
+| Argument    | Description                                                                     |
+|-------------|---------------------------------------------------------------------------------|
+| `rowFormat` | `RowFormat::Array` (default) or `RowFormat::Object`.                            |
+| `columnMap` | Renames header columns, e.g. `['firstname' => 'user.name.first']`.              |
+| `whitelist` | Only these columns are used (matched after mapping).                            |
+| `blacklist` | These columns are skipped (matched after mapping).                              |
+| `delimiter` | Field delimiter, default `,`.                                                   |
+| `enclosure` | Field enclosure, default `"`.                                                   |
+| `escape`    | Escape character, default `""` (RFC 4180: quotes are escaped by doubling them). |
 
 ```php
-$parser = new Parser('users.csv', [
-    'column_map' => ['firstname' => 'user.name.first'],
-    'blacklist' => ['user.password'],
-    'delimiter' => ';',
-]);
+$parser = new Parser(
+    columnMap: ['firstname' => 'user.name.first'],
+    blacklist: ['user.password'],
+    delimiter: ';',
+);
 ```
 
-`setStream()` reads from an already open stream such as `php://stdin`.
-`$parser->rowsFetched` holds the number of rows returned so far.
-
 All errors (missing file, missing header row, rows with the wrong number of
-columns, conflicting column names, unknown options) throw
+columns, conflicting column names, invalid characters) throw
 `JMToolkit\Exception`.
 
 ## Performance
@@ -92,7 +98,8 @@ php benchmarks/parse.php 200000 object
 
 ## Architecture
 
-`Parser` is a thin coordinator; each concern lives in its own internal class:
+`Parser` holds the configuration and `Rows` coordinates reading one file;
+each concern lives in its own internal class:
 
 | Class                            | Responsibility                                                         |
 |----------------------------------|------------------------------------------------------------------------|
@@ -104,19 +111,21 @@ php benchmarks/parse.php 200000 object
 | `Csv\Row\ArrayHydrator`, `ObjectHydrator` | Fill that shape from a record, one per `RowFormat`.          |
 
 Readers implement `RecordReader` and hydrators implement `RowHydrator`, so
-`Parser` depends only on those interfaces.
+`Rows` depends only on those interfaces.
 
 ## Upgrading from 0.x
 
 - Classes are namespaced and autoloaded with Composer: `JMToolkit_CSV_Parser`
   is now `JMToolkit\Csv\Parser`, and `JMToolkit_Exception` is now
   `JMToolkit\Exception`. The old names are no longer available.
-- `getNextArray()` and `getNextObject()` are replaced by iterating over the
-  parser with `foreach`. Use the `row_format` option (or `setRowFormat()`)
-  to choose between arrays and objects.
+- `Parser` only holds configuration, passed as named constructor arguments
+  instead of an options array; the setters are gone.
+- `setFile()`, `getNextArray()` and `getNextObject()` are replaced by
+  iterating over `$parser->parseFile($path)` (or `parseStream()`) with
+  `foreach`. The `rowFormat` argument chooses between arrays and objects.
 - Blank lines are skipped instead of raising a column count error.
 - Backslash is no longer an escape character by default. Pass
-  `['escape' => '\\']` to restore the old behaviour.
+  `escape: '\\'` to restore the old behaviour.
 - Duplicate column names, and columns that would be both a value and a parent
   (`user` and `user.name`), now throw instead of silently overwriting data.
 - The parser is `final` and its internals are private.

@@ -24,30 +24,6 @@ final readonly class ColumnSelection
     }
 
     /**
-     * @param array<string, string> $map
-     */
-    public function withMap(array $map): self
-    {
-        return clone($this, ['map' => $map]);
-    }
-
-    /**
-     * @param list<string> $whitelist
-     */
-    public function withWhitelist(array $whitelist): self
-    {
-        return clone($this, ['whitelist' => $whitelist]);
-    }
-
-    /**
-     * @param list<string> $blacklist
-     */
-    public function withBlacklist(array $blacklist): self
-    {
-        return clone($this, ['blacklist' => $blacklist]);
-    }
-
-    /**
      * Applies the map, then the whitelist and blacklist, to a header row.
      *
      * @param list<string|null> $headers

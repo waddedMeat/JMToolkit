@@ -6,12 +6,14 @@ namespace JMToolkit\Tests\Csv;
 
 use JMToolkit\Csv\Parser;
 use JMToolkit\Csv\RowFormat;
+use JMToolkit\Csv\Rows;
 use JMToolkit\Exception;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
 #[CoversClass(Parser::class)]
+#[CoversClass(Rows::class)]
 final class ParserTest extends TestCase
 {
     private const string HEADER = '"user.name.first","user.name.last","user.age","user.sex"';
@@ -20,6 +22,8 @@ final class ParserTest extends TestCase
         . "James,Moran,37,M\n"
         . "John,Doe,18,M\n"
         . "Jane,Doe,19,F\n";
+
+    private const string EXAMPLE = __DIR__ . '/../../examples/example1.csv';
 
     /** @var list<resource> */
     private array $streams = [];
@@ -49,61 +53,65 @@ final class ParserTest extends TestCase
         return $stream;
     }
 
+    private function rows(string $csv, Parser $parser = new Parser()): Rows
+    {
+        return $parser->parseStream($this->stream($csv));
+    }
+
     /**
      * Reads the next row, the way a single foreach step would.
      *
      * @return array<array-key, mixed>|\stdClass|null
      */
-    private static function next(Parser $parser): array|\stdClass|null
+    private static function next(Rows $rows): array|\stdClass|null
     {
-        $rows = $parser->getIterator();
+        $iterator = $rows->getIterator();
 
-        return $rows->valid() ? $rows->current() : null;
-    }
-
-    /**
-     * @param array<string, mixed> $options
-     */
-    private function parser(string $csv, array $options = []): Parser
-    {
-        // @phpstan-ignore argument.type (tests pass invalid options on purpose)
-        return new Parser(null, $options)->setStream($this->stream($csv));
+        return $iterator->valid() ? $iterator->current() : null;
     }
 
     public function testParsesNestedRows(): void
     {
-        $parser = $this->parser(self::USERS);
+        $rows = $this->rows(self::USERS);
 
         self::assertSame(
             ['user' => ['name' => ['first' => 'James', 'last' => 'Moran'], 'age' => '37', 'sex' => 'M']],
-            self::next($parser),
+            self::next($rows),
         );
-        self::assertSame(1, $parser->rowsFetched);
+        self::assertSame(1, $rows->rowsFetched);
+    }
+
+    public function testParsesFile(): void
+    {
+        $rows = iterator_to_array(new Parser()->parseFile(self::EXAMPLE));
+
+        self::assertCount(3, $rows);
+        self::assertSame(['user' => ['name' => ['first' => 'Jane', 'last' => 'Doe'], 'age' => '19', 'sex' => 'F']], $rows[2]);
     }
 
     public function testIterationStopsAtEndOfFile(): void
     {
-        $parser = $this->parser(self::USERS);
+        $rows = $this->rows(self::USERS);
 
-        self::assertSame(3, iterator_count($parser));
-        self::assertSame(0, iterator_count($parser));
-        self::assertSame(3, $parser->rowsFetched);
+        self::assertSame(3, iterator_count($rows));
+        self::assertSame(0, iterator_count($rows));
+        self::assertSame(3, $rows->rowsFetched);
     }
 
     public function testIterationResumesAfterBreak(): void
     {
-        $parser = $this->parser(self::USERS);
+        $rows = $this->rows(self::USERS);
 
-        foreach ($parser as $row) {
+        foreach ($rows as $row) {
             break;
         }
 
-        self::assertSame([1, 2], array_keys(iterator_to_array($parser)));
+        self::assertSame([1, 2], array_keys(iterator_to_array($rows)));
     }
 
     public function testReturnedRowsAreIndependent(): void
     {
-        [$first, $second] = iterator_to_array($this->parser(self::USERS));
+        [$first, $second] = iterator_to_array($this->rows(self::USERS));
 
         self::assertSame(
             ['user' => ['name' => ['first' => 'James', 'last' => 'Moran'], 'age' => '37', 'sex' => 'M']],
@@ -115,10 +123,10 @@ final class ParserTest extends TestCase
         );
     }
 
-    public function testIsIterable(): void
+    public function testKeysAreRowNumbers(): void
     {
         $users = [];
-        foreach ($this->parser(self::USERS) as $index => $row) {
+        foreach ($this->rows(self::USERS) as $index => $row) {
             self::assertIsArray($row);
             $users[$index] = $row['user'];
         }
@@ -127,23 +135,49 @@ final class ParserTest extends TestCase
         self::assertSame(['name' => ['first' => 'Jane', 'last' => 'Doe'], 'age' => '19', 'sex' => 'F'], $users[2]);
     }
 
+    public function testOneParserReadsSeveralFilesIndependently(): void
+    {
+        $parser = new Parser(whitelist: ['a']);
+        $narrow = $this->rows("a,b\n1,2\n3,4\n", $parser);
+        $wide = $this->rows("a,b,c\n5,6,7\n", $parser);
+
+        self::assertSame(['a' => '1'], self::next($narrow));
+        self::assertSame(['a' => '5'], self::next($wide));
+        self::assertSame(['a' => '3'], self::next($narrow));
+        self::assertSame(2, $narrow->rowsFetched);
+        self::assertSame(1, $wide->rowsFetched);
+    }
+
+    public function testHeaders(): void
+    {
+        $rows = $this->rows(
+            "first,last,age\nJames,Moran,37\n",
+            new Parser(columnMap: ['first' => 'name.first'], blacklist: ['age']),
+        );
+
+        self::assertSame(['first', 'last', 'age'], $rows->headers);
+        self::assertSame(['name' => ['first' => 'James'], 'last' => 'Moran'], self::next($rows));
+        self::assertSame(['first', 'last', 'age'], $rows->headers);
+    }
+
     public function testHeaderOnlyFileHasNoRows(): void
     {
-        self::assertNull(self::next($this->parser(self::HEADER . "\n")));
+        $rows = $this->rows(self::HEADER . "\n");
+
+        self::assertNull(self::next($rows));
+        self::assertSame(['user.name.first', 'user.name.last', 'user.age', 'user.sex'], $rows->headers);
     }
 
     public function testSkipsBlankLines(): void
     {
-        $parser = $this->parser(self::HEADER . "\n\nJames,Moran,37,M\n\n");
-
-        self::assertSame(1, iterator_count($parser));
+        self::assertSame(1, iterator_count($this->rows(self::HEADER . "\n\nJames,Moran,37,M\n\n")));
     }
 
     public function testObjectRowFormat(): void
     {
-        $rows = iterator_to_array($this->parser(
+        $rows = iterator_to_array($this->rows(
             "categories.0.name,categories.1.name,meta.0\nfoo,bar,baz\n",
-            ['row_format' => RowFormat::Object],
+            new Parser(rowFormat: RowFormat::Object),
         ));
 
         self::assertEquals(
@@ -155,32 +189,16 @@ final class ParserTest extends TestCase
         );
     }
 
-    public function testRowFormatCanBeChangedBetweenRows(): void
-    {
-        $parser = $this->parser(self::USERS);
-
-        self::assertIsArray(self::next($parser));
-        self::assertInstanceOf(\stdClass::class, self::next($parser->setRowFormat(RowFormat::Object)));
-        self::assertIsArray(self::next($parser->setRowFormat(RowFormat::Array)));
-    }
-
     public function testObjectRowFormatHandlesNonUtf8Data(): void
     {
-        $row = self::next($this->parser("name\n\xE9t\xE9\n")->setRowFormat(RowFormat::Object));
+        $row = self::next($this->rows("name\n\xE9t\xE9\n", new Parser(rowFormat: RowFormat::Object)));
 
         self::assertEquals((object) ['name' => "\xE9t\xE9"], $row);
     }
 
-    public function testInvalidRowFormatThrows(): void
-    {
-        $this->expectException(Exception::class);
-        $this->expectExceptionMessage('row_format');
-        $this->parser(self::USERS, ['row_format' => 'object']);
-    }
-
     public function testNumericKeysArePreserved(): void
     {
-        $row = self::next($this->parser(
+        $row = self::next($this->rows(
             "categories.0.name,categories.1.name,categories.0.description,categories.1.description\na,b,c,d\n",
         ));
 
@@ -192,9 +210,9 @@ final class ParserTest extends TestCase
 
     public function testColumnMap(): void
     {
-        $row = self::next($this->parser(
+        $row = self::next($this->rows(
             "firstname,lastname,age,user.sex\nJames,Moran,37,M\n",
-            ['column_map' => ['firstname' => 'user.name.first', 'lastname' => 'user.name.last', 'age' => 'user.age']],
+            new Parser(columnMap: ['firstname' => 'user.name.first', 'lastname' => 'user.name.last', 'age' => 'user.age']),
         ));
 
         self::assertSame(
@@ -205,34 +223,33 @@ final class ParserTest extends TestCase
 
     public function testBlacklist(): void
     {
-        $row = self::next($this->parser(self::USERS)->setBlacklist(['user.name.last', 'user.sex']));
+        $row = self::next($this->rows(self::USERS, new Parser(blacklist: ['user.name.last', 'user.sex'])));
 
         self::assertSame(['user' => ['name' => ['first' => 'James'], 'age' => '37']], $row);
     }
 
     public function testWhitelist(): void
     {
-        $row = self::next($this->parser(self::USERS)->setWhitelist(['user.name.last', 'user.sex']));
+        $row = self::next($this->rows(self::USERS, new Parser(whitelist: ['user.name.last', 'user.sex'])));
 
         self::assertSame(['user' => ['name' => ['last' => 'Moran'], 'sex' => 'M']], $row);
     }
 
     public function testWhitelistAndBlacklist(): void
     {
-        $row = self::next(
-            $this->parser(self::USERS)
-                ->setWhitelist(['user.name.last', 'user.sex'])
-                ->setBlacklist(['user.sex']),
-        );
+        $row = self::next($this->rows(
+            self::USERS,
+            new Parser(whitelist: ['user.name.last', 'user.sex'], blacklist: ['user.sex']),
+        ));
 
         self::assertSame(['user' => ['name' => ['last' => 'Moran']]], $row);
     }
 
     public function testListsMatchMappedNames(): void
     {
-        $row = self::next($this->parser(
+        $row = self::next($this->rows(
             "first,last\nJames,Moran\n",
-            ['column_map' => ['first' => 'name.first'], 'whitelist' => ['name.first']],
+            new Parser(columnMap: ['first' => 'name.first'], whitelist: ['name.first']),
         ));
 
         self::assertSame(['name' => ['first' => 'James']], $row);
@@ -240,147 +257,98 @@ final class ParserTest extends TestCase
 
     public function testCustomDelimiterAndEnclosure(): void
     {
-        $row = self::next($this->parser("'a.b';'a.c'\n'x;y';z\n", ['delimiter' => ';', 'enclosure' => "'"]));
+        $row = self::next($this->rows("'a.b';'a.c'\n'x;y';z\n", new Parser(delimiter: ';', enclosure: "'")));
 
         self::assertSame(['a' => ['b' => 'x;y', 'c' => 'z']], $row);
     }
 
     public function testBackslashIsNotAnEscapeCharacterByDefault(): void
     {
-        $row = self::next($this->parser("a,b\n\"C:\\dir\\\",x\n"));
+        $row = self::next($this->rows("a,b\n\"C:\\dir\\\",x\n"));
 
         self::assertSame(['a' => 'C:\\dir\\', 'b' => 'x'], $row);
-    }
-
-    /**
-     * @return iterable<string, array{\Closure(Parser): mixed}>
-     */
-    public static function settersAfterStart(): iterable
-    {
-        yield 'whitelist' => [static fn (Parser $p): Parser => $p->setWhitelist([])];
-        yield 'blacklist' => [static fn (Parser $p): Parser => $p->setBlacklist([])];
-        yield 'column map' => [static fn (Parser $p): Parser => $p->setColumnMap([])];
-    }
-
-    /**
-     * @param \Closure(Parser): mixed $setter
-     */
-    #[DataProvider('settersAfterStart')]
-    public function testSettersThrowAfterParsingStarted(\Closure $setter): void
-    {
-        $parser = $this->parser(self::USERS);
-        self::next($parser);
-
-        $this->expectException(Exception::class);
-        $this->expectExceptionMessage('after parsing has started');
-        $setter($parser);
-    }
-
-    public function testSettersAllowedAgainAfterNewFile(): void
-    {
-        $parser = $this->parser(self::USERS);
-        self::next($parser);
-        $parser->setFile(__DIR__ . '/../../examples/example1.csv');
-
-        $row = self::next($parser->setWhitelist(['user.age']));
-
-        self::assertSame(['user' => ['age' => '37']], $row);
-        self::assertSame(1, $parser->rowsFetched);
-    }
-
-    public function testSettingFileResetsColumnCount(): void
-    {
-        $parser = $this->parser("a,b\n1,2\n");
-        self::next($parser);
-
-        $parser->setStream($this->stream("a,b,c\n1,2,3\n"));
-
-        self::assertSame(['a' => '1', 'b' => '2', 'c' => '3'], self::next($parser));
     }
 
     public function testMissingHeaderRow(): void
     {
         $this->expectException(Exception::class);
         $this->expectExceptionMessage('missing header row');
-        self::next($this->parser(''));
+        self::next($this->rows(''));
+    }
+
+    public function testMissingHeaderRowWhenReadingHeaders(): void
+    {
+        $rows = $this->rows('');
+
+        $this->expectException(Exception::class);
+        $this->expectExceptionMessage('missing header row');
+        self::assertNotEmpty($rows->headers);
     }
 
     public function testColumnCountMismatch(): void
     {
-        $parser = $this->parser("a,b,c\n1,2,3\n1,2\n");
-        self::next($parser);
+        $rows = $this->rows("a,b,c\n1,2,3\n1,2\n");
+        self::next($rows);
 
         $this->expectException(Exception::class);
         $this->expectExceptionMessage('record 3 has 2 columns, expected 3');
-        self::next($parser);
+        self::next($rows);
     }
 
     public function testDuplicateColumnsAreRejected(): void
     {
         $this->expectException(Exception::class);
         $this->expectExceptionMessage('Column "a.b" conflicts with column "a.b"');
-        self::next($this->parser("a.b,a.b\n1,2\n"));
+        self::next($this->rows("a.b,a.b\n1,2\n"));
     }
 
     public function testLeafAndBranchColumnsAreRejected(): void
     {
         $this->expectException(Exception::class);
         $this->expectExceptionMessage('Column "user.name" conflicts with column "user"');
-        self::next($this->parser("user,user.name\n1,2\n"));
-    }
-
-    public function testReadingWithoutFileThrows(): void
-    {
-        $this->expectException(Exception::class);
-        $this->expectExceptionMessage('No file has been provided');
-        self::next(new Parser());
+        self::next($this->rows("user,user.name\n1,2\n"));
     }
 
     public function testOpeningFileThatDoesNotExist(): void
     {
         $this->expectException(Exception::class);
-        new Parser()->setFile('john_jacob_jingleheimer_schmidt');
+        new Parser()->parseFile('john_jacob_jingleheimer_schmidt');
     }
 
     public function testOpeningDirectoryThrows(): void
     {
         $this->expectException(Exception::class);
-        new Parser(__DIR__);
+        new Parser()->parseFile(__DIR__);
     }
 
-    public function testSetStreamRejectsNonResource(): void
+    public function testParseStreamRejectsNonResource(): void
     {
         $this->expectException(Exception::class);
         // @phpstan-ignore argument.type
-        new Parser()->setStream('not a stream');
+        new Parser()->parseStream('not a stream');
     }
 
     /**
-     * @return iterable<string, array{array<string, string>}>
+     * @return iterable<string, array{\Closure(): Parser}>
      */
     public static function invalidCharacterOptions(): iterable
     {
-        yield 'empty delimiter' => [['delimiter' => '']];
-        yield 'long delimiter' => [['delimiter' => '::']];
-        yield 'empty enclosure' => [['enclosure' => '']];
-        yield 'long escape' => [['escape' => '\\\\']];
+        // @phpstan-ignore argument.type
+        yield 'empty delimiter' => [static fn (): Parser => new Parser(delimiter: '')];
+        yield 'long delimiter' => [static fn (): Parser => new Parser(delimiter: '::')];
+        // @phpstan-ignore argument.type
+        yield 'empty enclosure' => [static fn (): Parser => new Parser(enclosure: '')];
+        yield 'long escape' => [static fn (): Parser => new Parser(escape: '\\\\')];
     }
 
     /**
-     * @param array<string, string> $options
+     * @param \Closure(): Parser $create
      */
     #[DataProvider('invalidCharacterOptions')]
-    public function testCharacterOptionsMustBeSingleCharacters(array $options): void
+    public function testCharacterOptionsMustBeSingleCharacters(\Closure $create): void
     {
         $this->expectException(Exception::class);
         $this->expectExceptionMessage('must be a single character');
-        $this->parser(self::USERS, $options);
-    }
-
-    public function testUnknownOptionThrows(): void
-    {
-        $this->expectException(Exception::class);
-        $this->expectExceptionMessage('Unknown option(s): colum_map');
-        $this->parser(self::USERS, ['colum_map' => []]);
+        $create();
     }
 }
