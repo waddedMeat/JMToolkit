@@ -24,32 +24,35 @@ composer require jmoran/jm-toolkit
 
 ```php
 use JMToolkit\Csv\Parser;
+use JMToolkit\Csv\RowFormat;
 
-$parser = new Parser('users.csv');
-
-// Iterate over every row...
-foreach ($parser as $row) {
+foreach (new Parser('users.csv') as $row) {
     echo $row['user']['name']['first'], PHP_EOL;
 }
 
-// ...or pull rows one at a time. Both methods return null at end of file.
-$parser->setFile('users.csv');
-while (($user = $parser->getNextObject()) !== null) {
+// Rows can be returned as objects instead of arrays.
+$parser = new Parser('users.csv', ['row_format' => RowFormat::Object]);
+foreach ($parser as $user) {
     echo $user->user->name->first, PHP_EOL;
 }
 ```
 
+Keys are 0-based row numbers. Breaking out of a loop and iterating again
+continues with the next row.
+
 Numeric path segments (`categories.0.name`, `categories.1.name`) produce
-numerically indexed arrays. `getNextObject()` turns associative arrays into
-`stdClass` objects and keeps such lists as arrays.
+numerically indexed arrays. With `RowFormat::Object`, associative arrays
+become `stdClass` objects and such lists stay arrays.
 
 ### Options
 
-Options can be passed to the constructor or set with the fluent setters
-before the first row is read.
+Options can be passed to the constructor or set with the fluent setters.
+The column options (`column_map`, `whitelist`, `blacklist`) must be set before
+the first row is read; `row_format` can be changed at any time.
 
 | Option       | Setter            | Description                                                         |
 |--------------|-------------------|---------------------------------------------------------------------|
+| `row_format` | `setRowFormat()`  | `RowFormat::Array` (default) or `RowFormat::Object`.               |
 | `column_map` | `setColumnMap()`  | Renames header columns, e.g. `['firstname' => 'user.name.first']`. |
 | `whitelist`  | `setWhitelist()`  | Only these columns are used (matched after mapping).                |
 | `blacklist`  | `setBlacklist()`  | These columns are skipped (matched after mapping).                  |
@@ -77,8 +80,9 @@ columns, conflicting column names, unknown options) throw
 - Classes are namespaced and autoloaded with Composer: `JMToolkit_CSV_Parser`
   is now `JMToolkit\Csv\Parser`, and `JMToolkit_Exception` is now
   `JMToolkit\Exception`. The old names are no longer available.
-- `getNextArray()` and `getNextObject()` return `null` instead of `false`
-  at end of file.
+- `getNextArray()` and `getNextObject()` are replaced by iterating over the
+  parser with `foreach`. Use the `row_format` option (or `setRowFormat()`)
+  to choose between arrays and objects.
 - Blank lines are skipped instead of raising a column count error.
 - Backslash is no longer an escape character by default. Pass
   `['escape' => '\\']` to restore the old behaviour.

@@ -28,7 +28,7 @@ use JMToolkit\Exception;
  * @copyright 2011 James Moran
  * @license   MIT
  *
- * @implements \IteratorAggregate<int, array<array-key, mixed>>
+ * @implements \IteratorAggregate<int, array<array-key, mixed>|\stdClass>
  */
 final class Parser implements \IteratorAggregate
 {
@@ -39,6 +39,7 @@ final class Parser implements \IteratorAggregate
         'delimiter' => ',',
         'enclosure' => '"',
         'escape' => '',
+        'row_format' => RowFormat::Array,
     ];
 
     /** Number of data rows returned since the current file was set. */
@@ -52,6 +53,7 @@ final class Parser implements \IteratorAggregate
      *     delimiter: string,
      *     enclosure: string,
      *     escape: string,
+     *     row_format: RowFormat,
      * }
      */
     private array $options;
@@ -84,6 +86,7 @@ final class Parser implements \IteratorAggregate
      *     delimiter?: string,
      *     enclosure?: string,
      *     escape?: string,
+     *     row_format?: RowFormat,
      * } $options
      */
     public function __construct(?string $path = null, array $options = [])
@@ -91,6 +94,11 @@ final class Parser implements \IteratorAggregate
         $unknown = array_diff_key($options, self::DEFAULT_OPTIONS);
         if ($unknown !== []) {
             throw new Exception(sprintf('Unknown option(s): %s', implode(', ', array_keys($unknown))));
+        }
+
+        // @phpstan-ignore instanceof.alwaysTrue (options arrive untyped at runtime)
+        if (!(($options['row_format'] ?? RowFormat::Array) instanceof RowFormat)) {
+            throw new Exception(sprintf('Option row_format must be a %s case', RowFormat::class));
         }
 
         $this->options = [...self::DEFAULT_OPTIONS, ...$options];
@@ -148,6 +156,17 @@ final class Parser implements \IteratorAggregate
     }
 
     /**
+     * Chooses whether iterating yields nested arrays or objects. Can be
+     * changed at any time; it applies to the rows read afterwards.
+     */
+    public function setRowFormat(RowFormat $format): static
+    {
+        $this->options['row_format'] = $format;
+
+        return $this;
+    }
+
+    /**
      * Opens the CSV file at the given path and resets the parser state.
      */
     public function setFile(string $path): static
@@ -185,22 +204,29 @@ final class Parser implements \IteratorAggregate
     }
 
     /**
-     * Returns the next row as nested stdClass objects (list-like columns
-     * such as "items.0", "items.1" become arrays), or null at end of file.
+     * Iterates over the remaining rows, as nested arrays or objects
+     * depending on the row format. Keys are 0-based row numbers. Breaking
+     * out of a loop and iterating again continues with the next row.
+     *
+     * @return \Generator<int, array<array-key, mixed>|\stdClass>
      */
-    public function getNextObject(): ?\stdClass
+    #[\Override]
+    public function getIterator(): \Generator
     {
-        $row = $this->getNextArray();
-
-        return $row === null ? null : (object) array_map(self::toObject(...), $row);
+        while (($row = $this->readRow()) !== null) {
+            yield $this->rowsFetched - 1 => match ($this->options['row_format']) {
+                RowFormat::Array => $row,
+                RowFormat::Object => (object) array_map(self::toObject(...), $row),
+            };
+        }
     }
 
     /**
-     * Returns the next row as a nested array, or null at end of file.
+     * Reads the next row as a nested array, or null at end of file.
      *
      * @return array<array-key, mixed>|null
      */
-    public function getNextArray(): ?array
+    private function readRow(): ?array
     {
         $this->columns ??= $this->readHeader();
 
@@ -224,19 +250,6 @@ final class Parser implements \IteratorAggregate
 
         /** @var array<array-key, mixed> $row */
         return $row;
-    }
-
-    /**
-     * Iterates over the remaining rows as nested arrays.
-     *
-     * @return \Generator<int, array<array-key, mixed>>
-     */
-    #[\Override]
-    public function getIterator(): \Generator
-    {
-        while (($row = $this->getNextArray()) !== null) {
-            yield $this->rowsFetched - 1 => $row;
-        }
     }
 
     /**
