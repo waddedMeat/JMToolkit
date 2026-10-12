@@ -333,15 +333,4 @@ final class ParserTest extends TestCase
         $this->expectExceptionMessage('Unknown option(s): colum_map');
         $this->parser(self::USERS, ['colum_map' => []]);
     }
-
-    public function testLegacyClassNamesStillWork(): void
-    {
-        $parser = new \JMToolkit_CSV_Parser(__DIR__ . '/../../examples/example1.csv');
-
-        self::assertInstanceOf(Parser::class, $parser);
-        self::assertSame(3, iterator_count($parser));
-
-        $this->expectException(\JMToolkit_Exception::class);
-        $parser->setWhitelist([]);
-    }
 }

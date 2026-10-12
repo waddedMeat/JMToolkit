@@ -76,7 +76,7 @@ columns, conflicting column names, unknown options) throw
 
 - Classes are namespaced and autoloaded with Composer: `JMToolkit_CSV_Parser`
   is now `JMToolkit\Csv\Parser`, and `JMToolkit_Exception` is now
-  `JMToolkit\Exception`. The old names still work as aliases.
+  `JMToolkit\Exception`. The old names are no longer available.
 - `getNextArray()` and `getNextObject()` return `null` instead of `false`
   at end of file.
 - Blank lines are skipped instead of raising a column count error.
