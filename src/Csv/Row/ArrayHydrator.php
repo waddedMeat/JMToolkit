@@ -31,12 +31,14 @@ final readonly class ArrayHydrator implements RowHydrator
     }
 
     /**
+     * Fills a schema subtree with the values of a record.
+     *
      * @param array<array-key, mixed> $node
      * @param list<string|null> $record
      *
      * @return array<array-key, mixed>
      */
-    private static function fill(array $node, array $record): array
+    public static function fill(array $node, array $record): array
     {
         // Overwriting the leaves of a copy of the node keeps the key order
         // and avoids growing a new array one key at a time.

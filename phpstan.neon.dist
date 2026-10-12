@@ -6,3 +6,16 @@ parameters:
         - tests
         - benchmarks
         - examples
+    ignoreErrors:
+        # The compiled closures take records as plain arrays: PHPStan cannot
+        # type closure parameters from PHPDoc, and a typed helper per cell
+        # would cost a function call on the hot path.
+        -
+            identifier: argument.type
+            path: src/Csv/Mapping/Compiler.php
+        -
+            identifier: return.type
+            path: src/Csv/Mapping/Compiler.php
+        -
+            identifier: cast.string
+            path: src/Csv/Mapping/Compiler.php

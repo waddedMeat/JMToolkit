@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace JMToolkit\Csv;
 
 use JMToolkit\Csv\Column\ColumnSelection;
+use JMToolkit\Csv\Mapping\ClassHydrator;
+use JMToolkit\Csv\Mapping\MappingException;
 use JMToolkit\Csv\Record\RecordReader;
 use JMToolkit\Csv\Row\RowHydrator;
 use JMToolkit\Csv\Row\Schema;
@@ -33,7 +35,7 @@ final class Rows implements \IteratorAggregate
      */
     public array $headers {
         get {
-            $this->hydrator ??= $this->readHeader();
+            $this->schema ??= $this->readHeader();
 
             return $this->headerRow;
         }
@@ -42,7 +44,10 @@ final class Rows implements \IteratorAggregate
     /** @var list<string> */
     private array $headerRow = [];
 
-    /** Builds rows; null until the header row has been read. */
+    /** Compiled from the header row; null until it has been read. */
+    private ?Schema $schema = null;
+
+    /** Builds rows in the parser's row format; null until first needed. */
     private ?RowHydrator $hydrator = null;
 
     /**
@@ -61,7 +66,7 @@ final class Rows implements \IteratorAggregate
     #[\Override]
     public function getIterator(): \Generator
     {
-        $hydrator = $this->hydrator ??= $this->readHeader();
+        $hydrator = $this->hydrator ??= $this->format->hydrator($this->schema ??= $this->readHeader());
 
         while (($record = $this->reader->read()) !== null) {
             /** @var array<array-key, mixed>|\stdClass $row */
@@ -71,11 +76,45 @@ final class Rows implements \IteratorAggregate
         }
     }
 
-    private function readHeader(): RowHydrator
+    /**
+     * Maps each remaining row onto a new instance of the given class, built
+     * through its constructor. Parameters are matched to columns by name
+     * (or #[Column]), nested classes are built from nested columns, and
+     * values are converted to the parameter types. Like iterating, this
+     * continues from the current row; keys are 0-based row numbers.
+     *
+     * Whether the class fits the file is checked once, when iteration
+     * starts; values are checked per row.
+     *
+     * @template T of object
+     *
+     * @param class-string<T> $class
+     *
+     * @return \Generator<int, T>
+     *
+     * @throws MappingException when the class does not fit the columns, or a
+     *                          value does not fit its type (with the row number)
+     */
+    public function into(string $class): \Generator
+    {
+        $hydrator = new ClassHydrator($this->schema ??= $this->readHeader(), $class);
+
+        while (($record = $this->reader->read()) !== null) {
+            try {
+                $object = $hydrator->hydrate($record);
+            } catch (MappingException $e) {
+                throw $e->inRow($this->rowsFetched + 1);
+            }
+
+            yield $this->rowsFetched++ => $object;
+        }
+    }
+
+    private function readHeader(): Schema
     {
         $headers = $this->reader->read() ?? throw new Exception('File is missing header row');
         $this->headerRow = array_map(strval(...), $headers);
 
-        return $this->format->hydrator(Schema::compile($this->columns->resolve($headers)));
+        return Schema::compile($this->columns->resolve($headers));
     }
 }

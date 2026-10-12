@@ -1,0 +1,12 @@
+<?php
+
+declare(strict_types=1);
+
+namespace JMToolkit\Tests\Csv\Mapping\Fixture;
+
+final readonly class NeedsStatus
+{
+    public function __construct(public Status $value)
+    {
+    }
+}
