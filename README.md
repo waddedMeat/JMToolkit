@@ -90,6 +90,22 @@ php benchmarks/parse.php 200000 array
 php benchmarks/parse.php 200000 object
 ```
 
+## Architecture
+
+`Parser` is a thin coordinator; each concern lives in its own internal class:
+
+| Class                            | Responsibility                                                         |
+|----------------------------------|------------------------------------------------------------------------|
+| `Csv\Record\Dialect`             | Delimiter, enclosure and escape characters (validated).                |
+| `Csv\Record\StreamReader`        | Tokenizes records from a stream, closing files it opened itself.       |
+| `Csv\Record\ValidatingReader`    | Skips blank lines and enforces a consistent number of columns.         |
+| `Csv\Row\ColumnSelection`        | Applies the column map, whitelist and blacklist to the header.         |
+| `Csv\Row\Schema`                 | Compiles the header into the nested shape of a row, rejecting clashes. |
+| `Csv\Row\ArrayHydrator`, `ObjectHydrator` | Fill that shape from a record, one per `RowFormat`.          |
+
+Readers implement `RecordReader` and hydrators implement `RowHydrator`, so
+`Parser` depends only on those interfaces.
+
 ## Upgrading from 0.x
 
 - Classes are namespaced and autoloaded with Composer: `JMToolkit_CSV_Parser`

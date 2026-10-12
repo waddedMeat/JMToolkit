@@ -2,19 +2,20 @@
 
 declare(strict_types=1);
 
-namespace JMToolkit\Tests\Csv;
+namespace JMToolkit\Tests\Csv\Record;
 
-use JMToolkit\Csv\Reader;
+use JMToolkit\Csv\Record\Dialect;
+use JMToolkit\Csv\Record\StreamReader;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
 /**
- * Reader must produce exactly what fgetcsv() produces, so every case here
+ * StreamReader must produce exactly what fgetcsv() produces, so every case here
  * compares the two on the same input.
  */
-#[CoversClass(Reader::class)]
-final class ReaderTest extends TestCase
+#[CoversClass(StreamReader::class)]
+final class StreamReaderTest extends TestCase
 {
     /**
      * @return iterable<string, array{string}>
@@ -85,7 +86,7 @@ final class ReaderTest extends TestCase
         fclose($writer);
 
         self::assertFalse(stream_get_meta_data($reader)['seekable']);
-        self::assertSame(self::expected($csv), self::readAll(new Reader($reader)));
+        self::assertSame(self::expected($csv), self::readAll(new StreamReader($reader)));
         fclose($reader);
     }
 
@@ -140,7 +141,7 @@ final class ReaderTest extends TestCase
         string $escape = '',
     ): array {
         $stream = self::memory($csv);
-        $records = self::readAll(new Reader($stream, $delimiter, $enclosure, $escape));
+        $records = self::readAll(new StreamReader($stream, new Dialect($delimiter, $enclosure, $escape)));
         fclose($stream);
 
         return $records;
@@ -149,7 +150,7 @@ final class ReaderTest extends TestCase
     /**
      * @return list<non-empty-list<string|null>>
      */
-    private static function readAll(Reader $reader): array
+    private static function readAll(StreamReader $reader): array
     {
         $records = [];
         while (($record = $reader->read()) !== null) {

@@ -2,7 +2,9 @@
 
 declare(strict_types=1);
 
-namespace JMToolkit\Csv;
+namespace JMToolkit\Csv\Record;
+
+use JMToolkit\Exception;
 
 /**
  * Reads CSV records from a stream, producing exactly what fgetcsv() would.
@@ -16,26 +18,39 @@ namespace JMToolkit\Csv;
  *
  * @internal
  */
-final class Reader
+final class StreamReader implements RecordReader
 {
     /** Strict pattern matching one field per match, or null when only fgetcsv() is used. */
     private readonly ?string $pattern;
 
+    // Copied out of the dialect because read() is the hot path.
+    /** @var non-empty-string */
+    private readonly string $delimiter;
+    /** @var non-empty-string */
+    private readonly string $enclosure;
+    private readonly string $escape;
+
+    /** Whether the stream was opened by open() and must be closed by this reader. */
+    private bool $ownsStream = false;
+
     /**
+     * Reads from an already open stream. The caller remains responsible for
+     * closing it.
+     *
      * @param resource $stream
-     * @param non-empty-string $delimiter
-     * @param non-empty-string $enclosure
      */
-    public function __construct(
-        private readonly mixed $stream,
-        private readonly string $delimiter = ',',
-        private readonly string $enclosure = '"',
-        private readonly string $escape = '',
-    ) {
-        $fastPath = $escape === ''
+    public function __construct(private readonly mixed $stream, Dialect $dialect = new Dialect())
+    {
+        if (!is_resource($stream) || get_resource_type($stream) !== 'stream') {
+            throw new Exception('Expected an open stream resource.');
+        }
+
+        $this->delimiter = $delimiter = $dialect->delimiter;
+        $this->enclosure = $enclosure = $dialect->enclosure;
+        $this->escape = $dialect->escape;
+
+        $fastPath = $this->escape === ''
             && $delimiter !== $enclosure
-            && strlen($delimiter) === 1
-            && strlen($enclosure) === 1
             && !str_contains("\r\n", $delimiter)
             && !str_contains("\r\n", $enclosure)
             && stream_get_meta_data($stream)['seekable'];
@@ -52,10 +67,39 @@ final class Reader
     }
 
     /**
+     * Opens the file at the given path; it is closed when the reader is
+     * destroyed.
+     */
+    public static function open(string $path, Dialect $dialect = new Dialect()): self
+    {
+        if (!is_file($path) || !is_readable($path)) {
+            throw new Exception(sprintf('File "%s" does not exist or is not readable.', $path));
+        }
+
+        $stream = fopen($path, 'r');
+        if ($stream === false) {
+            throw new Exception(sprintf('Unable to open file "%s".', $path));
+        }
+
+        $reader = new self($stream, $dialect);
+        $reader->ownsStream = true;
+
+        return $reader;
+    }
+
+    public function __destruct()
+    {
+        if ($this->ownsStream && is_resource($this->stream)) {
+            fclose($this->stream);
+        }
+    }
+
+    /**
      * Returns the next record, [null] for a blank line, or null at end of file.
      *
      * @return non-empty-list<string|null>|null
      */
+    #[\Override]
     public function read(): ?array
     {
         if ($this->pattern === null) {
