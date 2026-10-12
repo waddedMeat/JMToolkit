@@ -355,6 +355,28 @@ final class ParserTest extends TestCase
         new Parser()->setStream('not a stream');
     }
 
+    /**
+     * @return iterable<string, array{array<string, string>}>
+     */
+    public static function invalidCharacterOptions(): iterable
+    {
+        yield 'empty delimiter' => [['delimiter' => '']];
+        yield 'long delimiter' => [['delimiter' => '::']];
+        yield 'empty enclosure' => [['enclosure' => '']];
+        yield 'long escape' => [['escape' => '\\\\']];
+    }
+
+    /**
+     * @param array<string, string> $options
+     */
+    #[DataProvider('invalidCharacterOptions')]
+    public function testCharacterOptionsMustBeSingleCharacters(array $options): void
+    {
+        $this->expectException(Exception::class);
+        $this->expectExceptionMessage('must be a single character');
+        $this->parser(self::USERS, $options);
+    }
+
     public function testUnknownOptionThrows(): void
     {
         $this->expectException(Exception::class);

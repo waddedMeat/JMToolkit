@@ -75,6 +75,21 @@ All errors (missing file, missing header row, rows with the wrong number of
 columns, conflicting column names, unknown options) throw
 `JMToolkit\Exception`.
 
+## Performance
+
+Files are streamed one record at a time, so memory use stays constant no
+matter how large the file is. The header is compiled once into the shape of
+a row, and well-formed lines are tokenized without going through
+`fgetcsv()`, which is the slowest part of reading CSV in PHP. Lines that need
+its full rules (fields spanning several lines, stray quotes, an `escape`
+character, or a stream that cannot seek such as `php://stdin`) still use it,
+so results are identical either way.
+
+```sh
+php benchmarks/parse.php 200000 array
+php benchmarks/parse.php 200000 object
+```
+
 ## Upgrading from 0.x
 
 - Classes are namespaced and autoloaded with Composer: `JMToolkit_CSV_Parser`

@@ -50,8 +50,8 @@ final class Parser implements \IteratorAggregate
      *     whitelist: list<string>|null,
      *     blacklist: list<string>|null,
      *     column_map: array<string, string>|null,
-     *     delimiter: string,
-     *     enclosure: string,
+     *     delimiter: non-empty-string,
+     *     enclosure: non-empty-string,
      *     escape: string,
      *     row_format: RowFormat,
      * }
@@ -64,6 +64,8 @@ final class Parser implements \IteratorAggregate
     /** Whether the stream was opened by this parser (and must be closed by it). */
     private bool $ownsStream = false;
 
+    private ?Reader $reader = null;
+
     /** Number of columns in the header row; every data row must match it. */
     private int $columnCount = 0;
 
@@ -71,20 +73,29 @@ final class Parser implements \IteratorAggregate
     private int $recordNumber = 0;
 
     /**
-     * Key path for each kept column, indexed by column position.
-     * Null until the header row has been read.
+     * Shape of a row, compiled from the header: nested keys whose leaves are
+     * the column positions holding their values. Null until the header row
+     * has been read.
      *
-     * @var array<int, non-empty-list<string>>|null
+     * @var array<array-key, mixed>|null
      */
-    private ?array $columns = null;
+    private ?array $tree = null;
+
+    /**
+     * The same shape for RowFormat::Object: each branch is [bool $isList,
+     * array $children], so lists can stay arrays without inspecting every row.
+     *
+     * @var array{bool, array<array-key, mixed>}
+     */
+    private array $objectTree = [false, []];
 
     /**
      * @param array{
      *     whitelist?: list<string>|null,
      *     blacklist?: list<string>|null,
      *     column_map?: array<string, string>|null,
-     *     delimiter?: string,
-     *     enclosure?: string,
+     *     delimiter?: non-empty-string,
+     *     enclosure?: non-empty-string,
      *     escape?: string,
      *     row_format?: RowFormat,
      * } $options
@@ -99,6 +110,13 @@ final class Parser implements \IteratorAggregate
         // @phpstan-ignore instanceof.alwaysTrue (options arrive untyped at runtime)
         if (!(($options['row_format'] ?? RowFormat::Array) instanceof RowFormat)) {
             throw new Exception(sprintf('Option row_format must be a %s case', RowFormat::class));
+        }
+
+        foreach (['delimiter', 'enclosure', 'escape'] as $option) {
+            $value = $options[$option] ?? self::DEFAULT_OPTIONS[$option];
+            if (strlen($value) !== 1 && !($option === 'escape' && $value === '')) {
+                throw new Exception(sprintf('Option %s must be a single character', $option));
+            }
         }
 
         $this->options = [...self::DEFAULT_OPTIONS, ...$options];
@@ -213,43 +231,51 @@ final class Parser implements \IteratorAggregate
     #[\Override]
     public function getIterator(): \Generator
     {
-        while (($row = $this->readRow()) !== null) {
-            yield $this->rowsFetched - 1 => match ($this->options['row_format']) {
-                RowFormat::Array => $row,
-                RowFormat::Object => (object) array_map(self::toObject(...), $row),
-            };
+        while (true) {
+            $this->tree ??= $this->readHeader();
+            $record = $this->readRecord();
+            if ($record === null) {
+                return;
+            }
+
+            yield $this->rowsFetched++ => $this->options['row_format'] === RowFormat::Array
+                ? self::buildArray($this->tree, $record)
+                : (object) self::buildObject($this->objectTree[1], false, $record);
         }
     }
 
     /**
-     * Reads the next row as a nested array, or null at end of file.
+     * @param array<array-key, mixed> $node
+     * @param list<string|null> $record
      *
-     * @return array<array-key, mixed>|null
+     * @return array<array-key, mixed>
      */
-    private function readRow(): ?array
+    private static function buildArray(array $node, array $record): array
     {
-        $this->columns ??= $this->readHeader();
-
-        $record = $this->readRecord();
-        if ($record === null) {
-            return null;
+        // Overwriting the leaves of a copy of the node keeps the key order
+        // and avoids growing a new array one key at a time.
+        foreach ($node as $key => $child) {
+            /** @var int|array<array-key, mixed> $child */
+            $node[$key] = is_int($child) ? $record[$child] : self::buildArray($child, $record);
         }
 
-        $row = [];
-        foreach ($this->columns as $index => $path) {
-            $node = &$row;
-            foreach ($path as $key) {
-                // @phpstan-ignore offsetAccess.nonOffsetAccessible (readHeader() rejects paths that would nest under a value)
-                $node = &$node[$key];
-            }
-            $node = $record[$index];
-            unset($node);
+        return $node;
+    }
+
+    /**
+     * @param array<array-key, mixed> $node
+     * @param list<string|null> $record
+     *
+     * @return array<array-key, mixed>|\stdClass
+     */
+    private static function buildObject(array $node, bool $isList, array $record): array|\stdClass
+    {
+        foreach ($node as $key => $child) {
+            /** @var int|array{bool, array<array-key, mixed>} $child */
+            $node[$key] = is_int($child) ? $record[$child] : self::buildObject($child[1], $child[0], $record);
         }
 
-        $this->rowsFetched++;
-
-        /** @var array<array-key, mixed> $row */
-        return $row;
+        return $isList ? $node : (object) $node;
     }
 
     /**
@@ -261,10 +287,16 @@ final class Parser implements \IteratorAggregate
 
         $this->stream = $stream;
         $this->ownsStream = $owned;
+        $this->reader = new Reader(
+            $stream,
+            $this->options['delimiter'],
+            $this->options['enclosure'],
+            $this->options['escape'],
+        );
         $this->rowsFetched = 0;
         $this->recordNumber = 0;
         $this->columnCount = 0;
-        $this->columns = null;
+        $this->tree = null;
     }
 
     private function closeStream(): void
@@ -274,26 +306,27 @@ final class Parser implements \IteratorAggregate
         }
 
         $this->stream = null;
+        $this->reader = null;
         $this->ownsStream = false;
     }
 
     private function assertNotStarted(string $what): void
     {
-        if ($this->columns !== null) {
+        if ($this->tree !== null) {
             throw new Exception(sprintf('Attempting to set %s after parsing has started', $what));
         }
     }
 
     /**
-     * Reads the header row and resolves the key path of every kept column.
+     * Reads the header row and compiles the shape of every row from it.
      *
-     * @return array<int, non-empty-list<string>>
+     * @return array<array-key, mixed>
      */
     private function readHeader(): array
     {
         $headers = $this->readRecord() ?? throw new Exception('File is missing header row');
 
-        $columns = [];
+        $tree = [];
         $seen = [];
         foreach ($headers as $index => $header) {
             $name = $this->options['column_map'][(string) $header] ?? (string) $header;
@@ -304,10 +337,49 @@ final class Parser implements \IteratorAggregate
 
             $this->assertNoConflict($name, $seen);
             $seen[$name] = true;
-            $columns[$index] = explode('.', $name);
+
+            $tree = self::insert($tree, explode('.', $name), $index);
         }
 
-        return $columns;
+        $this->objectTree = self::compileObjectTree($tree);
+
+        return $tree;
+    }
+
+    /**
+     * @param array<array-key, mixed> $node
+     * @param list<string> $path
+     *
+     * @return array<array-key, mixed>
+     */
+    private static function insert(array $node, array $path, int $index): array
+    {
+        $key = array_shift($path);
+        if ($key === null) {
+            return $node;
+        }
+
+        $child = $node[$key] ?? [];
+        // assertNoConflict() guarantees a branch is never inserted under a leaf.
+        $node[$key] = $path === [] ? $index : self::insert(is_array($child) ? $child : [], $path, $index);
+
+        return $node;
+    }
+
+    /**
+     * @param array<array-key, mixed> $node
+     *
+     * @return array{bool, array<array-key, mixed>}
+     */
+    private static function compileObjectTree(array $node): array
+    {
+        $children = [];
+        foreach ($node as $key => $child) {
+            /** @var int|array<array-key, mixed> $child */
+            $children[$key] = is_int($child) ? $child : self::compileObjectTree($child);
+        }
+
+        return [array_is_list($node), $children];
     }
 
     /**
@@ -337,19 +409,11 @@ final class Parser implements \IteratorAggregate
      */
     private function readRecord(): ?array
     {
-        if ($this->stream === null) {
-            throw new Exception('No file has been provided');
-        }
+        $reader = $this->reader ?? throw new Exception('No file has been provided');
 
         do {
-            $record = fgetcsv(
-                $this->stream,
-                null,
-                $this->options['delimiter'],
-                $this->options['enclosure'],
-                $this->options['escape'],
-            );
-            if ($record === false) {
+            $record = $reader->read();
+            if ($record === null) {
                 return null;
             }
             $this->recordNumber++;
@@ -378,20 +442,5 @@ final class Parser implements \IteratorAggregate
     private function isBlacklisted(string $name): bool
     {
         return $this->options['blacklist'] !== null && in_array($name, $this->options['blacklist'], true);
-    }
-
-    /**
-     * Converts nested associative arrays to stdClass objects, keeping lists
-     * as arrays (the same shape json_decode() would produce).
-     */
-    private static function toObject(mixed $value): mixed
-    {
-        if (!is_array($value)) {
-            return $value;
-        }
-
-        $converted = array_map(self::toObject(...), $value);
-
-        return array_is_list($value) ? $converted : (object) $converted;
     }
 }
